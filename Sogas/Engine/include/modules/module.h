@@ -1,0 +1,61 @@
+#pragma once
+
+namespace sogas
+{
+namespace modules
+{
+class IModule
+{
+  public:
+    IModule(const std::string& name)
+    : name(name){};
+
+    const std::string& get_name() const
+    {
+        return name;
+    }
+    bool get_is_active() const
+    {
+        return is_active;
+    }
+
+  protected:
+    virtual bool start()                = 0;
+    virtual void stop()                 = 0;
+    virtual void update(f32 delta_time) = 0;
+    virtual void render()               = 0;
+    virtual void render_ui()            = 0;
+    virtual void render_debug()         = 0;
+
+  private:
+    bool doStart()
+    {
+        ASSERT(is_active == false);
+        if (is_active)
+            return false;
+
+        const bool ok = start();
+        if (ok)
+        {
+            is_active = true;
+        }
+        return ok;
+    }
+
+    void doStop()
+    {
+        ASSERT(is_active);
+        if (!is_active)
+            return;
+
+        stop();
+        is_active = false;
+    }
+
+    std::string name;
+    bool        is_active{false};
+};
+
+using VectorModules = std::vector<std::shared_ptr<IModule>>;
+} // namespace modules
+} // namespace sogas
