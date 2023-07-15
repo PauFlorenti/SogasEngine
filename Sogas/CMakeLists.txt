@@ -8,15 +8,14 @@ project(SogasEngine
 
 set(CMAKE_CXX_STANDARD 20)
 
-if (NOT DEFINED CMAKE_BUILD_TYPE)
+if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
-endif (NOT DEFINED CMAKE_BUILD_TYPE)
+endif(NOT DEFINED CMAKE_BUILD_TYPE)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../output/${CMAKE_BUILD_TYPE})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../output/${CMAKE_BUILD_TYPE})
 
 add_subdirectory(Engine)
-# add_subdirectory(EngineTest)
+add_subdirectory(EngineTest)
 add_subdirectory(Sandbox)
 
 set(CMAKE_SUPPRESS_REGENERATION true)

@@ -1,14 +1,17 @@
-file(GLOB_RECURSE SOURCES *.h *.cpp)
+file(GLOB_RECURSE SOURCES *.h *.hpp *.c *.cpp)
 
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../output/${CMAKE_BUILD_TYPE})
-# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../output/${CMAKE_BUILD_TYPE})
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -pedantic -Werror)
+endif()
 
-add_library(SogasEngine STATIC ${SOURCES})
+add_library(engine STATIC ${SOURCES})
 
-target_include_directories(SogasEngine
+target_include_directories(engine
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-target_precompile_headers(SogasEngine PUBLIC src/pch.hpp)
+target_precompile_headers(engine PUBLIC src/pch.hpp)
