@@ -80,9 +80,11 @@ void Engine::init()
     // Render module
     // Clock module ??
     // Entity module
-    module_manager.register_module(std::make_shared<modules::input::InputModule>("Input module"));
+    module_manager.register_module(std::make_shared<modules::input::InputModule>("input"));
 
     // TODO register standalone game components
+
+    module_manager.boot();
 
     // TODO If more than one main window ... (should not happen) close the program only when the last is closed.
     // Should have a way to check for that ... maybe a vector or array of windows.

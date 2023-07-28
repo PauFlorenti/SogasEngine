@@ -1,5 +1,7 @@
 #include "pch.hpp"
 
+#include <fstream>
+
 #include <platform/platform.h>
 
 #ifdef _WIN64
@@ -249,6 +251,38 @@ void set_window_fullscreen(const Window_id id, bool is_fullscreen)
 bool is_window_fullscreen(const Window_id id)
 {
     return get_from_id(id).is_fullscreen;
+}
+
+json load_json(const std::string& filename)
+{
+    json j = {};
+    while (true)
+    {
+        std::ifstream ifs(filename.c_str());
+
+        if (!ifs.is_open())
+        {
+            printf("ERROR: Could not open json file %s.", filename.c_str());
+            continue;
+        }
+
+#ifdef NDEBUG
+        j = json::parse(ifs, nullptr, false);
+
+        if (j.is_discarded())
+        {
+            ifs.close();
+            printf("ERROR: Could not open json file %s.", filename.c_str());
+            continue;
+        }
+#endif
+
+        j = json::parse(ifs);
+
+        break;
+    }
+
+    return j;
 }
 
 #else

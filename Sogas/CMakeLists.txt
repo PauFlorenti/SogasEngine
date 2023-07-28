@@ -12,10 +12,17 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif(NOT DEFINED CMAKE_BUILD_TYPE)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../output/${CMAKE_BUILD_TYPE})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../output)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../output)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../output)
 
 add_subdirectory(Engine)
-add_subdirectory(EngineTest)
 add_subdirectory(Sandbox)
+
+message(STATUS CMAKE input test: ${USE_TESTS})
+
+if(${USE_TESTS})
+    add_subdirectory(EngineTest)
+endif(${USE_TESTS})
 
 set(CMAKE_SUPPRESS_REGENERATION true)

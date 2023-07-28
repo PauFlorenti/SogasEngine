@@ -28,7 +28,7 @@ class IModule
     virtual void render_debug()         = 0;
 
   private:
-    bool doStart()
+    bool do_start()
     {
         ASSERT(is_active == false);
         if (is_active)
@@ -42,7 +42,7 @@ class IModule
         return ok;
     }
 
-    void doStop()
+    void do_stop()
     {
         ASSERT(is_active);
         if (!is_active)
@@ -51,6 +51,8 @@ class IModule
         stop();
         is_active = false;
     }
+
+    friend class ModuleManager;
 
     std::string name;
     bool        is_active{false};

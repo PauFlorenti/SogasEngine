@@ -22,7 +22,7 @@ TEST(PlatformTest, OpenWindowWithoutParameters)
 
 TEST(PlatformTest, OpenWindowWithParameters)
 {
-    window_init_info window_info{L"Sogas Engine Test", nullptr, nullptr, 0, 0, 1280, 720};
+    window_init_info window_info{"Sogas Engine Test", nullptr, nullptr, 0, 0, 1280, 720};
     auto             window = create_window(&window_info);
 
     EXPECT_TRUE(window >= 0);
@@ -38,7 +38,7 @@ TEST(PlatformTest, OpenWindowWithParameters)
 
 TEST(PlatformTest, ResizeWindow)
 {
-    window_init_info window_info{L"Sogas Engine Test", nullptr, nullptr, 0, 0, 1280, 720};
+    window_init_info window_info{"Sogas Engine Test", nullptr, nullptr, 0, 0, 1280, 720};
     auto             window = create_window(&window_info);
 
     EXPECT_TRUE(window >= 0);

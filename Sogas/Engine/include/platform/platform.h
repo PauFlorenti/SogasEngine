@@ -1,8 +1,12 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #ifdef _WIN64
 #include <Windows.h>
 #endif
+
+using json = nlohmann::json;
 
 #ifdef _WIN64
 namespace sogas::engine::platform
@@ -35,6 +39,9 @@ const u32 get_window_width(const Window_id id);
 const u32 get_window_height(const Window_id id);
 void      set_window_fullscreen(const Window_id id, const bool is_fullscreen);
 bool      is_window_fullscreen(const Window_id);
+
+// File stuff
+json load_json(const std::string& filename);
 } // namespace sogas::engine::platform
 
 #else

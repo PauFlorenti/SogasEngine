@@ -1,0 +1,13 @@
+# Project
+output/
+
+# Visual Studio stuff
+.vscode/
+.vs/
+*.vcxproj*
+*.sln
+
+# CMake stuff
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake

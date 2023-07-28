@@ -6,7 +6,7 @@ namespace modules
 {
 class IModule;
 
-using VectorModules = std::vector<std::shared_ptr<IModule>>;
+using ModulesVector = std::vector<std::shared_ptr<IModule>>;
 
 class ModuleManager
 {
@@ -26,10 +26,17 @@ class ModuleManager
     void register_module(std::shared_ptr<IModule> module);
     void register_game_module(std::shared_ptr<IModule> module);
 
+    std::shared_ptr<IModule> get_module(const std::string& name);
+
   private:
-    VectorModules services;
-    VectorModules update_modules;
-    VectorModules render_modules;
+    void start_modules(const ModulesVector& modules);
+    void stop_modules(const ModulesVector& modules);
+
+    void parse_module_config(const std::string& config_file);
+
+    ModulesVector services;
+    ModulesVector update_modules;
+    ModulesVector render_modules;
 
     std::map<std::string, std::shared_ptr<IModule>> registered_modules;
 };
