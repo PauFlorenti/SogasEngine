@@ -1,7 +1,5 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
-
 #ifdef _WIN64
 #include <Windows.h>
 #endif

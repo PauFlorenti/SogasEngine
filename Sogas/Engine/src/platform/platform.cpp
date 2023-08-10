@@ -271,14 +271,14 @@ json load_json(const std::string& filename)
 
         if (j.is_discarded())
         {
+            printf("Json discarded\n");
             ifs.close();
             printf("ERROR: Could not open json file %s.", filename.c_str());
             continue;
         }
-#endif
-
+#else
         j = json::parse(ifs);
-
+#endif
         break;
     }
 

@@ -11,10 +11,10 @@ add_library(engine STATIC ${SOURCES})
 target_include_directories(engine
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/json/include
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/json/include
 )
 
 target_precompile_headers(engine PUBLIC src/pch.hpp)

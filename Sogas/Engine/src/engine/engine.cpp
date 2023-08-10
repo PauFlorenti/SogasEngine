@@ -2,12 +2,12 @@
 #include "pch.hpp"
 
 #include <engine/Engine.h>
+#include <modules/module_entities.h>
 #include <modules/module_input.h>
 #include <platform/platform.h>
 
 namespace
 {
-
 using namespace sogas::engine::platform;
 Window_id window;
 
@@ -75,11 +75,13 @@ void Engine::init()
     // TODO register modules
 
     // Given modules by the engine
+    // Log module
     // Input module
     // Physics module
     // Render module
     // Clock module ??
     // Entity module
+    module_manager.register_module(std::make_shared<modules::EntityModule>("entity"));
     module_manager.register_module(std::make_shared<modules::input::InputModule>("input"));
 
     // TODO register standalone game components

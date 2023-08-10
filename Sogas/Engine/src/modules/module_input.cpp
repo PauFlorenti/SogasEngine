@@ -16,12 +16,12 @@ bool InputModule::start()
 
 void InputModule::stop()
 {
-    printf("Stop input module");
+    //printf("Stop input module");
 }
 
 void InputModule::update(f32 /*delta_time*/)
 {
-    printf("Input module is being updated!");
+    //printf("Input module is being updated!");
 }
 
 void InputModule::render()
