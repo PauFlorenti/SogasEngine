@@ -9,7 +9,7 @@ namespace modules
 using namespace engine::handle;
 bool EntityModule::start()
 {
-    printf("Entity module starting!");
+    INFO("Entity module starting!");
 
     ASSERT(HandleManager::predefined_handle_managers.at(0) != nullptr);
     ASSERT(strcmp(HandleManager::predefined_handle_managers.at(0)->get_name().c_str(), "entity") == 0);
@@ -35,12 +35,11 @@ bool EntityModule::start()
 
 void EntityModule::stop()
 {
-    //printf("Entity module stoping!");
+    INFO("Entity module stoping!");
 }
 
 void EntityModule::update(f32 /*delta_time*/)
 {
-    //printf("Entity module update!");
 }
 } // namespace modules
 } // namespace sogas

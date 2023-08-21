@@ -149,7 +149,7 @@ const Window_id create_window(const window_init_info* window_init_info)
 #if _DEBUG
         SetLastError(0);
 #endif
-        printf("No valid window handle created!\n");
+        FATAL("No valid window handle created!\n");
         return INVALID_ID;
     }
 
@@ -262,7 +262,7 @@ json load_json(const std::string& filename)
 
         if (!ifs.is_open())
         {
-            printf("ERROR: Could not open json file %s.", filename.c_str());
+            ERROR("ERROR: Could not open json file %s.", filename.c_str());
             continue;
         }
 
@@ -271,9 +271,9 @@ json load_json(const std::string& filename)
 
         if (j.is_discarded())
         {
-            printf("Json discarded\n");
+            ERROR("Json discarded\n");
             ifs.close();
-            printf("ERROR: Could not open json file %s.", filename.c_str());
+            ERROR("ERROR: Could not open json file %s.", filename.c_str());
             continue;
         }
 #else

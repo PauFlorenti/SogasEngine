@@ -33,5 +33,6 @@
 
 // engine includes
 #include <engine/defines.h>
+#include <engine/logger.h>
 
 #endif //PCH_HPP

@@ -25,7 +25,7 @@ void HandleManager::init(const u32 max_objects)
     // When init, all managers should have types as 0.
     if (type != 0)
     {
-        printf("ERROR: HandleManager with type != 0.");
+        ERROR("HandleManager with type != 0.");
         return;
     }
 

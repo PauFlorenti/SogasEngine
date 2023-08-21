@@ -70,7 +70,7 @@ namespace engine
 {
 void Engine::init()
 {
-    printf("Initializing engine!\n");
+    DEBUG("Initializing engine!");
 
     // TODO register modules
 
@@ -119,7 +119,7 @@ void Engine::run()
 
 void Engine::shutdown()
 {
-    printf("Shuting down engine!\n");
+    DEBUG("Shuting down engine!");
     platform::remove_window(window);
     module_manager.clear();
 }
