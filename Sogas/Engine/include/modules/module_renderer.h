@@ -26,8 +26,8 @@ class RendererModule : public IModule
     void render_debug() override{};
 
   private:
-      //! Not a shared_ptr<pinut::GPUDevice> due to C26495. 
-      //! Variable not initialized and cannot initialize an abstract class.
+    //! Not a shared_ptr<pinut::GPUDevice> due to C26495.
+    //! Variable not initialized and cannot initialize an abstract class.
     pinut::GPUDevice* renderer = nullptr;
 };
 } // namespace modules

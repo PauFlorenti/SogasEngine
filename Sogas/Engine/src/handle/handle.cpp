@@ -18,7 +18,6 @@ bool Handle::is_valid() const
 
 void Handle::load(const nlohmann::json& /*json_data*/, sogas::engine::Scene& /*scene*/)
 {
-
 }
 } // namespace handle
 } // namespace engine

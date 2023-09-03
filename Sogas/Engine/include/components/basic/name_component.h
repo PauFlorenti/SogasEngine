@@ -14,7 +14,7 @@ class NameComponent : public BaseComponent
     static std::unordered_map<std::string, handle::Handle> all_names;
 
     const std::string get_name() const;
-    void set_name(const std::string& name);
+    void              set_name(const std::string& name);
 
   private:
     static constexpr size_t max_length = 128;

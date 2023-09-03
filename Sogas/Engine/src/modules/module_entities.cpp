@@ -14,7 +14,7 @@ bool EntityModule::start()
     ASSERT(HandleManager::predefined_handle_managers.at(0) != nullptr);
     ASSERT(strcmp(HandleManager::predefined_handle_managers.at(0)->get_name().c_str(), "entity") == 0);
 
-    u32 index{ 0 };
+    u32 index{0};
     for (const auto& handle_manager : HandleManager::predefined_handle_managers)
     {
         // Initialize only the predefined handle managers.
@@ -23,7 +23,7 @@ bool EntityModule::start()
             break;
         }
 
-        // TODO: Read from components.json 
+        // TODO: Read from components.json
         handle_manager->init(1024);
         ++index;
     }

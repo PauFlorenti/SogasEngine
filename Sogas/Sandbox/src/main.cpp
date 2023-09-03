@@ -1,6 +1,3 @@
-
-
-//#include <engine/defines.h>
 #include <engine/engine.h>
 
 int main()

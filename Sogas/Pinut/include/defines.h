@@ -47,4 +47,4 @@ constexpr u32 INVALID_ID = 0xFFFFFFFF;
         {                    \
             ASSERT(false);   \
         }                    \
-    }                        \
+    }

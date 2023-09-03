@@ -23,11 +23,11 @@ class VulkanDevice : public GPUDevice
     void destroy_texture(resources::TextureHandle handle) override;
 
   private:
-    bool create_instance();
-    void setup_debug_messenger();
-    void pick_physical_device();
+    bool                                 create_instance();
+    void                                 setup_debug_messenger();
+    void                                 pick_physical_device();
     std::vector<VkDeviceQueueCreateInfo> get_queues();
-    void create_device();
+    void                                 create_device();
 
     VkInstance                 vulkan_instance = VK_NULL_HANDLE;
     VkDevice                   handle_device   = VK_NULL_HANDLE;
