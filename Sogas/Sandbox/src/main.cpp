@@ -1,9 +1,6 @@
 
-#include <iostream>
-#include <map>
-#include <vector>
 
-#include <engine/defines.h>
+//#include <engine/defines.h>
 #include <engine/engine.h>
 
 int main()

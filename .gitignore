@@ -1,11 +1,15 @@
 # Project
+build/
 output/
 
 # Visual Studio stuff
 .vscode/
 .vs/
-*.vcxproj*
+*.config
+*.dir
 *.sln
+*.vcxproj*
+**/packages/
 
 # CMake stuff
 CMakeFiles/

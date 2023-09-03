@@ -38,6 +38,11 @@ const u32 get_window_height(const Window_id id);
 void      set_window_fullscreen(const Window_id id, const bool is_fullscreen);
 bool      is_window_fullscreen(const Window_id);
 
+// String functions
+constexpr auto char_buffer_size = 1024 * 4;
+i32            string_format(char* dest, const char* format, ...);
+i32            string_format(char* dest, const char* format, va_list va_args);
+
 // File stuff
 json load_json(const std::string& filename);
 } // namespace sogas::engine::platform

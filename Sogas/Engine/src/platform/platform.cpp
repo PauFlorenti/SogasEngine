@@ -253,6 +253,33 @@ bool is_window_fullscreen(const Window_id id)
     return get_from_id(id).is_fullscreen;
 }
 
+i32 string_format(char* dest, const char* format, ...)
+{
+    if (dest != nullptr)
+    {
+        va_list argptr;
+        va_start(argptr, format);
+        const auto number_written = string_format(dest, format, argptr);
+        va_end(argptr);
+        return number_written;
+    }
+
+    return -1;
+}
+
+i32 string_format(char* dest, const char* format, va_list va_args)
+{
+    if (dest != nullptr)
+    {
+        char buffer[char_buffer_size];
+        const auto number_written = _vsnprintf_s(buffer, sizeof(buffer), (size_t)char_buffer_size, format, va_args);
+        memcpy(dest, buffer, number_written + 1);
+        return number_written;
+    }
+
+    return -1;
+}
+
 json load_json(const std::string& filename)
 {
     json j = {};

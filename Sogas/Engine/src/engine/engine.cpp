@@ -4,6 +4,7 @@
 #include <engine/Engine.h>
 #include <modules/module_entities.h>
 #include <modules/module_input.h>
+#include <modules/module_renderer.h>
 #include <platform/platform.h>
 
 namespace
@@ -83,6 +84,7 @@ void Engine::init()
     // Entity module
     module_manager.register_module(std::make_shared<modules::EntityModule>("entity"));
     module_manager.register_module(std::make_shared<modules::input::InputModule>("input"));
+    module_manager.register_module(std::make_shared<modules::RendererModule>("renderer"));
 
     // TODO register standalone game components
 
