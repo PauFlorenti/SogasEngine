@@ -31,9 +31,11 @@
 // Third party includes
 #include <nlohmann/json.hpp>
 
+// own external includes.
+#include <logger.h>
+
 // engine includes
 #include <engine/defines.h>
-#include <engine/logger.h>
 #include <platform/platform.h>
 
 #endif //PCH_HPP

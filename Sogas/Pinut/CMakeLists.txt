@@ -25,10 +25,12 @@ target_include_directories(pinut
     ${Vulkan_INCLUDE_DIR}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../logger/include
 )
 
 target_link_libraries(pinut PRIVATE
     ${Vulkan_LIBRARY}
+    logger
 )
 
 target_precompile_headers(pinut PUBLIC src/pch.hpp)

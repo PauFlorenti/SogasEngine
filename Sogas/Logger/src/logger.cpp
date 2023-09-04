@@ -1,13 +1,38 @@
-#include "pch.hpp"
-
-#include <engine/logger.h>
+#include <defines.h>
+#include <logger.h>
 
 namespace sogas
 {
-namespace engine
-{
 namespace log
 {
+
+static i32 string_format(char* dest, const char* format, va_list va_args)
+{
+    if (dest != nullptr)
+    {
+        char       buffer[char_buffer_size];
+        const auto number_written = _vsnprintf_s(buffer, sizeof(buffer), (size_t)char_buffer_size, format, va_args);
+        memcpy(dest, buffer, number_written + 1);
+        return number_written;
+    }
+
+    return -1;
+}
+
+static i32 string_format(char* dest, const char* format, ...)
+{
+    if (dest != nullptr)
+    {
+        va_list argptr;
+        va_start(argptr, format);
+        const auto number_written = string_format(dest, format, argptr);
+        va_end(argptr);
+        return number_written;
+    }
+
+    return -1;
+}
+
 void output(Logger_types type, const char* message, ...)
 {
     // TODO: This is only supported in windows right now.
@@ -25,23 +50,23 @@ void output(Logger_types type, const char* message, ...)
 
     auto level_index = static_cast<u8>(type);
 
-    char* buffer = (char*)malloc(platform::char_buffer_size);
+    char* buffer = (char*)malloc(char_buffer_size);
 
     if (!buffer)
         return;
 
-    memset(buffer, 0, platform::char_buffer_size);
+    memset(buffer, 0, char_buffer_size);
 
     va_list argptr;
     va_start(argptr, message);
-    const auto length = platform::string_format(buffer, message, argptr);
+    const auto length = string_format(buffer, message, argptr);
     UNUSED(length); // TODO Check if that can be removed in release build.
     va_end(argptr);
 
     ASSERT(length >= 0); // In case we want to print an empty line.
 
-    char       whole_content[platform::char_buffer_size];
-    const auto number_written = platform::string_format(whole_content, "%s%s\n", level_type_strings[level_index], buffer);
+    char       whole_content[char_buffer_size];
+    const auto number_written = string_format(whole_content, "%s%s\n", level_type_strings[level_index], buffer);
 
     ASSERT(number_written > 0);
 
@@ -54,5 +79,4 @@ void output(Logger_types type, const char* message, ...)
     SetConsoleTextAttribute(handle, reset_color);
 }
 } // namespace log
-} // namespace engine
 } // namespace sogas
