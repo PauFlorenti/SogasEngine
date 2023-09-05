@@ -12,7 +12,8 @@ bool EntityModule::start()
     INFO("Entity module starting!");
 
     ASSERT(HandleManager::predefined_handle_managers.at(0) != nullptr);
-    ASSERT(strcmp(HandleManager::predefined_handle_managers.at(0)->get_name().c_str(), "entity") == 0);
+    ASSERT(strcmp(HandleManager::predefined_handle_managers.at(0)->get_name().c_str(), "entity") ==
+           0);
 
     u32 index{0};
     for (const auto& handle_manager : HandleManager::predefined_handle_managers)

@@ -27,8 +27,10 @@ class GPUDevice
     virtual void init(const DeviceDescriptor& descriptor) = 0;
     virtual void shutdown()                               = 0;
 
-    virtual resources::BufferHandle  create_buffer(const resources::BufferDescriptor& descriptor)   = 0;
-    virtual resources::TextureHandle create_texture(const resources::TextureDescriptor& descriptor) = 0;
+    virtual resources::BufferHandle create_buffer(
+      const resources::BufferDescriptor& descriptor) = 0;
+    virtual resources::TextureHandle create_texture(
+      const resources::TextureDescriptor& descriptor) = 0;
 
     virtual void destroy_buffer(resources::BufferHandle handle)   = 0;
     virtual void destroy_texture(resources::TextureHandle handle) = 0;

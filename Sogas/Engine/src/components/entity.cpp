@@ -42,7 +42,9 @@ void Entity::load(const nlohmann::json& json_file, Scene& scene)
         auto& component_data = component.value();
 
 #ifndef NDEBUG
-        INFO("Parsing component %s from json scene %s.", component_name.c_str(), component_data.dump().c_str());
+        INFO("Parsing component %s from json scene %s.",
+             component_name.c_str(),
+             component_data.dump().c_str());
 #endif
 
         auto object_manager = HandleManager::get_by_name(component_name);

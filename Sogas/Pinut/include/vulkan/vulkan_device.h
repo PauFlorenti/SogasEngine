@@ -17,7 +17,8 @@ class VulkanDevice : public GPUDevice
     void shutdown() override;
 
     resources::BufferHandle  create_buffer(const resources::BufferDescriptor& descriptor) override;
-    resources::TextureHandle create_texture(const resources::TextureDescriptor& descriptor) override;
+    resources::TextureHandle create_texture(
+      const resources::TextureDescriptor& descriptor) override;
 
     void destroy_buffer(resources::BufferHandle handle) override;
     void destroy_texture(resources::TextureHandle handle) override;
@@ -45,7 +46,7 @@ class VulkanDevice : public GPUDevice
     VkQueue                              graphics_queue  = VK_NULL_HANDLE;
     VkQueue                              present_queue   = VK_NULL_HANDLE;
     VkQueue                              transfer_queue  = VK_NULL_HANDLE;
-    u32                                  frame_count     = 0; // Number of frames since the beginning of the application.
+    u32 frame_count = 0; // Number of frames since the beginning of the application.
 };
 } // namespace vulkan
 } // namespace pinut

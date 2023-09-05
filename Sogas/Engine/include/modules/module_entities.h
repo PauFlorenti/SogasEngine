@@ -11,8 +11,7 @@ class EntityModule : public IModule
 {
   public:
     EntityModule() = delete;
-    EntityModule(const std::string& name)
-    : IModule(name){};
+    EntityModule(const std::string& name) : IModule(name){};
     ~EntityModule() = default;
 
   protected:

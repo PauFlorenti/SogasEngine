@@ -28,10 +28,7 @@ class Handle final
     static constexpr u32 num_bits_generation = 32 - num_bits_types - num_bits_index; //
     static constexpr u32 max_types           = 1 << num_bits_types; // 128
 
-    Handle()
-    : type(0),
-      index(0),
-      generation(0)
+    Handle() : type(0), index(0), generation(0)
     {
     }
 
@@ -102,9 +99,10 @@ class Handle final
     void load(const nlohmann::json& json_data, sogas::engine::Scene& scene);
 
   private:
-    handle_type       type : num_bits_types; // The type of the handle
-    handle_index      index : num_bits_index; // Index to find the actual object this handle is owner of.
-    handle_generation generation : num_bits_generation; // Make sure there are no old versions of this object.
+    handle_type  type : num_bits_types; // The type of the handle
+    handle_index index : num_bits_index; // Index to find the actual object this handle is owner of.
+    handle_generation generation
+    : num_bits_generation; // Make sure there are no old versions of this object.
 };
 
 using HandleVector = std::vector<Handle>;

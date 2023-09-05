@@ -7,8 +7,7 @@ namespace modules
 class IModule
 {
   public:
-    IModule(const std::string& name)
-    : name(name){};
+    IModule(const std::string& name) : name(name){};
 
     const std::string& get_name() const
     {

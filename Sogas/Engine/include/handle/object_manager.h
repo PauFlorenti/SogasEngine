@@ -13,11 +13,11 @@ class ObjectManager : public HandleManager
 {
   public:
     ObjectManager(const ObjectManager&) = delete;
-    ObjectManager(const std::string& name)
-    : objects(nullptr)
+    ObjectManager(const std::string& name) : objects(nullptr)
     {
-        HandleManager::predefined_handle_managers[HandleManager::number_predefined_handle_managers++] = this;
-        this->name                                                                                    = name;
+        HandleManager::predefined_handle_managers
+          [HandleManager::number_predefined_handle_managers++] = this;
+        this->name                                             = name;
     }
 
     void init(u32 max_objects) override
@@ -91,12 +91,14 @@ class ObjectManager : public HandleManager
     object_type* objects = nullptr;
 };
 
-#define DECLARE_OBJECT_MANAGER(object_name, object_class_name)                                               \
-    sogas::engine::handle::ObjectManager<object_class_name> object_manager_##object_class_name(object_name); \
-    template <>                                                                                              \
-    sogas::engine::handle::ObjectManager<object_class_name>* get_object_manager<object_class_name>()         \
-    {                                                                                                        \
-        return &object_manager_##object_class_name;                                                          \
+#define DECLARE_OBJECT_MANAGER(object_name, object_class_name)                                  \
+    sogas::engine::handle::ObjectManager<object_class_name> object_manager_##object_class_name( \
+      object_name);                                                                             \
+    template <>                                                                                 \
+    sogas::engine::handle::ObjectManager<object_class_name>*                                    \
+    get_object_manager<object_class_name>()                                                     \
+    {                                                                                           \
+        return &object_manager_##object_class_name;                                             \
     }
 
 } // namespace handle

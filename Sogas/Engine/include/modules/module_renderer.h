@@ -11,8 +11,7 @@ class RendererModule : public IModule
 {
   public:
     RendererModule() = delete;
-    RendererModule(const std::string& name)
-    : IModule(name)
+    RendererModule(const std::string& name) : IModule(name)
     {
     }
     ~RendererModule() = default;

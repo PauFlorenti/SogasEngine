@@ -13,9 +13,8 @@ using namespace sogas::engine::platform;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LONG_PTR long_ptr{GetWindowLongPtr(hWnd, 0)};
-    return long_ptr ?
-             ((window_proc)long_ptr)(hWnd, message, wParam, lParam) :
-             DefWindowProc(hWnd, message, wParam, lParam);
+    return long_ptr ? ((window_proc)long_ptr)(hWnd, message, wParam, lParam) :
+                      DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 struct Window_info
@@ -30,7 +29,8 @@ struct Window_info
 };
 
 std::vector<Window_info> windows; // Holds info for the open windows.
-std::vector<Window_id>   available_windows; // If there is any empty slot in the windows vector, this will hold its id.
+std::vector<Window_id>
+  available_windows; // If there is any empty slot in the windows vector, this will hold its id.
 
 static const Window_id add_window(Window_info info)
 {
@@ -107,16 +107,19 @@ const Window_id create_window(const window_init_info* window_init_info)
 
     // Create window
     Window_info info{};
-    info.caption = (window_init_info && window_init_info->caption) ? window_init_info->caption : "Sogas Engine";
+    info.caption =
+      (window_init_info && window_init_info->caption) ? window_init_info->caption : "Sogas Engine";
 
     info.style = WS_VISIBLE;
     info.style |= parent ? WS_CHILD : WS_OVERLAPPEDWINDOW;
 
     // Desired window client size
-    const i32 left   = window_init_info ? window_init_info->left : info.client_area.left;
-    const i32 top    = window_init_info ? window_init_info->top : info.client_area.top;
-    const i32 width  = window_init_info ? window_init_info->width : info.client_area.right - info.client_area.left;
-    const i32 height = window_init_info ? window_init_info->height : info.client_area.bottom - info.client_area.top;
+    const i32 left = window_init_info ? window_init_info->left : info.client_area.left;
+    const i32 top  = window_init_info ? window_init_info->top : info.client_area.top;
+    const i32 width =
+      window_init_info ? window_init_info->width : info.client_area.right - info.client_area.left;
+    const i32 height =
+      window_init_info ? window_init_info->height : info.client_area.bottom - info.client_area.top;
 
     info.client_area = {left, top, width, height};
 
@@ -130,18 +133,17 @@ const Window_id create_window(const window_init_info* window_init_info)
     const auto window_width  = width + rc.right - rc.left;
     const auto window_height = height + rc.bottom - rc.top;
 
-    HWND hWnd = CreateWindow(
-      "SogasEngineClass",
-      info.caption,
-      info.style,
-      window_x,
-      window_y,
-      window_width,
-      window_height,
-      parent,
-      NULL,
-      NULL,
-      NULL);
+    HWND hWnd = CreateWindow("SogasEngineClass",
+                             info.caption,
+                             info.style,
+                             window_x,
+                             window_y,
+                             window_width,
+                             window_height,
+                             parent,
+                             NULL,
+                             NULL,
+                             NULL);
 
     if (!hWnd)
     {
@@ -272,7 +274,8 @@ i32 string_format(char* dest, const char* format, va_list va_args)
     if (dest != nullptr)
     {
         char       buffer[char_buffer_size];
-        const auto number_written = _vsnprintf_s(buffer, sizeof(buffer), (size_t)char_buffer_size, format, va_args);
+        const auto number_written =
+          _vsnprintf_s(buffer, sizeof(buffer), (size_t)char_buffer_size, format, va_args);
         memcpy(dest, buffer, number_written + 1);
         return number_written;
     }

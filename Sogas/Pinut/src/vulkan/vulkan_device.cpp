@@ -3,7 +3,7 @@
 
 namespace
 {
-static const std::vector<const char*> validation_layers            = {"VK_LAYER_KHRONOS_validation"};
+static const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
 static const std::vector<const char*> required_instance_extensions = {
 #ifdef WIN32
   "VK_KHR_win32_surface",
@@ -11,7 +11,8 @@ static const std::vector<const char*> required_instance_extensions = {
   VK_KHR_SURFACE_EXTENSION_NAME};
 static const std::vector<const char*> required_device_extensions = {};
 
-static bool check_required_extensions_available(const std::vector<VkExtensionProperties>& available_extensions)
+static bool check_required_extensions_available(
+  const std::vector<VkExtensionProperties>& available_extensions)
 {
     for (const auto extension_name : required_instance_extensions)
     {
@@ -122,12 +123,14 @@ void VulkanDevice::shutdown()
     vkDestroyInstance(vulkan_instance, nullptr);
 }
 
-resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescriptor& /*descriptor*/)
+resources::BufferHandle VulkanDevice::create_buffer(
+  const resources::BufferDescriptor& /*descriptor*/)
 {
     return {};
 }
 
-resources::TextureHandle VulkanDevice::create_texture(const resources::TextureDescriptor& /*descriptor*/)
+resources::TextureHandle VulkanDevice::create_texture(
+  const resources::TextureDescriptor& /*descriptor*/)
 {
     return {};
 }
@@ -205,14 +208,18 @@ void VulkanDevice::pick_physical_device()
     }
 
     std::vector<VkPhysicalDevice> available_physical_devices(physical_device_count);
-    VK_CHECK(vkEnumeratePhysicalDevices(vulkan_instance, &physical_device_count, available_physical_devices.data()));
+    VK_CHECK(vkEnumeratePhysicalDevices(vulkan_instance,
+                                        &physical_device_count,
+                                        available_physical_devices.data()));
 
 #ifdef _DEBUG
     DEBUG("Available physical devices: ");
     for (const auto& gpu : available_physical_devices)
     {
         vkGetPhysicalDeviceProperties(gpu, &physical_device_properties);
-        DEBUG("\tDevice name: %s\tVendor ID: %d", physical_device_properties.deviceName, physical_device_properties.vendorID);
+        DEBUG("\tDevice name: %s\tVendor ID: %d",
+              physical_device_properties.deviceName,
+              physical_device_properties.vendorID);
     }
 #endif
 
@@ -229,12 +236,15 @@ std::vector<VkDeviceQueueCreateInfo> VulkanDevice::get_queues()
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
 
     queue_family_properties.resize(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_family_properties.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device,
+                                             &queue_family_count,
+                                             queue_family_properties.data());
 
     u32 i = 0;
     for (const auto& queue_family : queue_family_properties)
     {
-        if (queue_family.queueCount > 0 && queue_family.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
+        if (queue_family.queueCount > 0 &&
+            queue_family.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
         {
             graphics_family = i;
             break;
@@ -265,17 +275,21 @@ void VulkanDevice::create_device()
 
     auto queue_create_infos = get_queues();
 
-    VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES, nullptr};
+    VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+      nullptr};
 
-    VkPhysicalDeviceFeatures2 physical_features2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &indexing_features};
+    VkPhysicalDeviceFeatures2 physical_features2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+                                                    &indexing_features};
     vkGetPhysicalDeviceFeatures2(physical_device, &physical_features2);
 
-    bool bIs_bindless_supported = indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
+    bool bIs_bindless_supported =
+      indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
 
-    VkDeviceCreateInfo device_create_info      = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-    device_create_info.queueCreateInfoCount    = static_cast<u32>(queue_create_infos.size());
-    device_create_info.pQueueCreateInfos       = queue_create_infos.data();
-    device_create_info.enabledExtensionCount   = static_cast<u32>(required_device_extensions.size());
+    VkDeviceCreateInfo device_create_info    = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+    device_create_info.queueCreateInfoCount  = static_cast<u32>(queue_create_infos.size());
+    device_create_info.pQueueCreateInfos     = queue_create_infos.data();
+    device_create_info.enabledExtensionCount = static_cast<u32>(required_device_extensions.size());
     device_create_info.ppEnabledExtensionNames = required_device_extensions.data();
 
     if (bIs_bindless_supported)
@@ -308,19 +322,20 @@ void VulkanDevice::setup_debug_messenger()
 
     VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {
       VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
-    debug_messenger_create_info.messageSeverity =
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debug_messenger_create_info.messageType =
-      VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    debug_messenger_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     debug_messenger_create_info.pfnUserCallback = debug_callback;
     debug_messenger_create_info.pUserData       = nullptr;
 
-    if (create_debug_utils_messengerEXT(vulkan_instance, &debug_messenger_create_info, nullptr, &debug_messenger) != VK_SUCCESS)
+    if (create_debug_utils_messengerEXT(vulkan_instance,
+                                        &debug_messenger_create_info,
+                                        nullptr,
+                                        &debug_messenger) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to setup debug messenger!");
     }

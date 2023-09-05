@@ -12,8 +12,9 @@ using HandleManagerArray = std::array<HandleManager*, Handle::max_types>;
 
 class HandleManager
 {
-    static constexpr u32 max_total_objects = 1 << Handle::num_bits_index; // The maximum number of objects per type
-    static bool          handle_pending_destroy; // Mark as true when objects are pending to destroy.
+    static constexpr u32 max_total_objects =
+      1 << Handle::num_bits_index; // The maximum number of objects per type
+    static bool handle_pending_destroy; // Mark as true when objects are pending to destroy.
 
     struct ExternalData
     {
@@ -22,10 +23,7 @@ class HandleManager
         Handle                    current_owner;
         Handle::handle_generation current_generation : Handle::num_bits_generation;
 
-        ExternalData()
-        : internal_index(0),
-          next_external_index(0),
-          current_generation(0)
+        ExternalData() : internal_index(0), next_external_index(0), current_generation(0)
         {
         }
     };

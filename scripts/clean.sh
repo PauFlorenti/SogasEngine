@@ -1,3 +1,5 @@
+#!/bin/sh
+
 rm -rf ./output
 rm -rf ./output_test
 rm -rf ./build

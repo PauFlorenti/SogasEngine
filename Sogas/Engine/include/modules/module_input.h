@@ -12,8 +12,7 @@ class InputModule final : public IModule
 {
   public:
     InputModule() = delete;
-    InputModule(const std::string& name)
-    : IModule(name){};
+    InputModule(const std::string& name) : IModule(name){};
     ~InputModule() = default;
 
   protected:
