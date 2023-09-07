@@ -6,16 +6,40 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
+message("Looking for installed Vulkan SDK")
 find_package(Vulkan)
 
-if(NOT ${Vulkan_INCLUDE_DIRS} STREQUAL "")
-    set(VULKAN_PATH ${Vulkan_INCLUDE_DIRS})
-    STRING(REGEX REPLACE "/Include" "" VULKAN_PATH ${VULKAN_PATH})
-endif(NOT ${Vulkan_INCLUDE_DIRS} STREQUAL "")
+if(Vulkan_FOUND)
+    message("Vulkan found!")
+    message("Vulkan include directory: " ${Vulkan_INCLUDE_DIR})
+    message("Vulkan libs: " ${Vulkan_LIBRARY})
+else()
+    message("Automatic vulkan fetch failed. Trying manually again.")
+    if(NOT DEFINED ENV{VULKAN_SDK})
+        message(FATAL_ERROR "Failed to locate Vulkan SDK.")
+    endif()
 
-if(NOT Vulkan_FOUND)
-    message(STATUS "Failed to locate Vulkan SDK.")
-endif(NOT Vulkan_FOUND)
+    set(VULKAN_SDK "$ENV{VULKAN_SDK}")
+    message("Vulkan SDK path: " ${VULKAN_SDK})
+
+    message("${VULKAN_SDK}/Include")
+
+    find_path(
+        Vulkan_INCLUDE_DIR vulkan/vulkan.h
+        PATHS "${VULKAN_SDK}/Include" "${VULKAN_SDK}/include")
+
+    message("Vulkan include directory: " ${Vulkan_INCLUDE_DIR})
+
+    set(VULKAN_LIBRARY_DIRS "${VULKAN_SDK}/lib" "${VULKAN_SDK}/Lib")
+
+    find_library(
+        Vulkan_LIBRARY
+        NAMES vulkan vulkan-1
+        PATHS ${VULKAN_LIBRARY_DIRS}
+    )
+
+    message("Vulkan libs: " ${Vulkan_LIBRARY})
+endif(Vulkan_FOUND)
 
 add_library(pinut STATIC ${SOURCES})
 
