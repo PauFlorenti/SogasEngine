@@ -10,13 +10,13 @@ namespace input
 {
 bool InputModule::start()
 {
-    INFO("Start input module");
+    PINFO("Start input module");
     return true;
 }
 
 void InputModule::stop()
 {
-    INFO("Stop input module");
+    PINFO("Stop input module");
 }
 
 void InputModule::update(f32 /*delta_time*/)

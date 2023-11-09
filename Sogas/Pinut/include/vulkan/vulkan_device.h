@@ -29,10 +29,13 @@ class VulkanDevice : public GPUDevice
     void                                 pick_physical_device();
     std::vector<VkDeviceQueueCreateInfo> get_queues();
     void                                 create_device();
+    void                                 create_surface(void* window);
 
-    VkInstance                 vulkan_instance = VK_NULL_HANDLE;
-    VkDevice                   handle_device   = VK_NULL_HANDLE;
-    VkPhysicalDevice           physical_device = VK_NULL_HANDLE;
+    VkDevice         handle_device   = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkInstance       vulkan_instance = VK_NULL_HANDLE;
+    VkSurfaceKHR     vulkan_surface  = VK_NULL_HANDLE;
+
     VkPhysicalDeviceProperties physical_device_properties;
 
 #ifdef _DEBUG
@@ -40,12 +43,15 @@ class VulkanDevice : public GPUDevice
 #endif
 
     std::vector<VkQueueFamilyProperties> queue_family_properties;
-    u32                                  graphics_family = VK_QUEUE_FAMILY_IGNORED;
-    u32                                  present_family  = VK_QUEUE_FAMILY_IGNORED;
-    u32                                  transfer_family = VK_QUEUE_FAMILY_IGNORED;
-    VkQueue                              graphics_queue  = VK_NULL_HANDLE;
-    VkQueue                              present_queue   = VK_NULL_HANDLE;
-    VkQueue                              transfer_queue  = VK_NULL_HANDLE;
+
+    u32 graphics_family = VK_QUEUE_FAMILY_IGNORED;
+    u32 present_family  = VK_QUEUE_FAMILY_IGNORED;
+    u32 transfer_family = VK_QUEUE_FAMILY_IGNORED;
+
+    VkQueue graphics_queue = VK_NULL_HANDLE;
+    VkQueue present_queue  = VK_NULL_HANDLE;
+    VkQueue transfer_queue = VK_NULL_HANDLE;
+
     u32 frame_count = 0; // Number of frames since the beginning of the application.
 };
 } // namespace vulkan

@@ -9,10 +9,10 @@ namespace modules
 bool RendererModule::start()
 {
     pinut::DeviceDescriptor descriptor;
-    descriptor.set_window(1280, 720, nullptr);
+    descriptor.set_window(1280, 720, window_handle);
 
     renderer = pinut::GPUDevice::create(pinut::GraphicsAPI::Vulkan);
-    renderer->init({});
+    renderer->init(descriptor);
 
     return true;
 }

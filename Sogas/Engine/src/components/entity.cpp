@@ -42,7 +42,7 @@ void Entity::load(const nlohmann::json& json_file, Scene& scene)
         auto& component_data = component.value();
 
 #ifndef NDEBUG
-        INFO("Parsing component %s from json scene %s.",
+        PINFO("Parsing component %s from json scene %s.",
              component_name.c_str(),
              component_data.dump().c_str());
 #endif
@@ -50,7 +50,7 @@ void Entity::load(const nlohmann::json& json_file, Scene& scene)
         auto object_manager = HandleManager::get_by_name(component_name);
         if (!object_manager)
         {
-            WARN("Warning! Unknown component name %s.", component_name.c_str());
+            PWARN("Warning! Unknown component name %s.", component_name.c_str());
             return;
         }
 

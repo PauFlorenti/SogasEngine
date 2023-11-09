@@ -11,7 +11,7 @@ class RendererModule : public IModule
 {
   public:
     RendererModule() = delete;
-    RendererModule(const std::string& name) : IModule(name)
+    RendererModule(const std::string& name, void* window) : IModule(name), window_handle(window)
     {
     }
     ~RendererModule() = default;
@@ -28,6 +28,8 @@ class RendererModule : public IModule
     //! Not a shared_ptr<pinut::GPUDevice> due to C26495.
     //! Variable not initialized and cannot initialize an abstract class.
     pinut::GPUDevice* renderer = nullptr;
+
+    void* window_handle = nullptr;
 };
 } // namespace modules
 } // namespace sogas

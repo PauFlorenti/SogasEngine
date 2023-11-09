@@ -151,7 +151,7 @@ const Window_id create_window(const window_init_info* window_init_info)
 #if _DEBUG
         SetLastError(0);
 #endif
-        FATAL("No valid window handle created!\n");
+        PFATAL("No valid window handle created!\n");
         return INVALID_ID;
     }
 
@@ -255,6 +255,11 @@ bool is_window_fullscreen(const Window_id id)
     return get_from_id(id).is_fullscreen;
 }
 
+void* get_window_handle(const Window_id id)
+{
+    return get_from_id(id).handle;
+}
+
 i32 string_format(char* dest, const char* format, ...)
 {
     if (dest != nullptr)
@@ -292,7 +297,7 @@ json load_json(const std::string& filename)
 
         if (!ifs.is_open())
         {
-            ERROR("ERROR: Could not open json file %s.", filename.c_str());
+            PERROR("ERROR: Could not open json file %s.", filename.c_str());
             continue;
         }
 

@@ -71,7 +71,13 @@ namespace engine
 {
 void Engine::init()
 {
-    DEBUG("Initializing engine!");
+    PDEBUG("Initializing engine!");
+
+    // TODO If more than one main window ... (should not happen) close the program only when the last is closed.
+    // Should have a way to check for that ... maybe a vector or array of windows.
+
+    platform::window_init_info init_info{"Sogas Engine", nullptr, WndProc, 100, 100, 1280, 720};
+    window = platform::create_window(&init_info);
 
     // TODO register modules
 
@@ -84,17 +90,11 @@ void Engine::init()
     // Entity module
     module_manager.register_module(std::make_shared<modules::EntityModule>("entity"));
     module_manager.register_module(std::make_shared<modules::input::InputModule>("input"));
-    module_manager.register_module(std::make_shared<modules::RendererModule>("renderer"));
+    module_manager.register_module(std::make_shared<modules::RendererModule>("renderer", platform::get_window_handle(window)));
 
     // TODO register standalone game components
 
     module_manager.boot();
-
-    // TODO If more than one main window ... (should not happen) close the program only when the last is closed.
-    // Should have a way to check for that ... maybe a vector or array of windows.
-
-    platform::window_init_info init_info{"Sogas Engine", nullptr, WndProc, 100, 100, 1280, 720};
-    window = platform::create_window(&init_info);
 }
 
 void Engine::run()
@@ -121,7 +121,7 @@ void Engine::run()
 
 void Engine::shutdown()
 {
-    DEBUG("Shuting down engine!");
+    PDEBUG("Shuting down engine!");
     platform::remove_window(window);
     module_manager.clear();
 }

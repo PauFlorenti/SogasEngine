@@ -38,6 +38,8 @@ const u32 get_window_height(const Window_id id);
 void      set_window_fullscreen(const Window_id id, const bool is_fullscreen);
 bool      is_window_fullscreen(const Window_id);
 
+void* get_window_handle(const Window_id id);
+
 // String functions
 constexpr auto char_buffer_size = 1024 * 4;
 i32            string_format(char* dest, const char* format, ...);

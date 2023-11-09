@@ -43,7 +43,7 @@ debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
 {
     if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
-        ERROR("Validation layer: %s", pCallbackData->pMessage);
+        PERROR("Validation layer: %s", pCallbackData->pMessage);
     }
     return VK_FALSE;
 }

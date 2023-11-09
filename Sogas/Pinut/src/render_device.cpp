@@ -26,7 +26,7 @@ GPUDevice* GPUDevice::create(GraphicsAPI api)
             break;
 
         default:
-            FATAL("No valid graphics API.");
+            PFATAL("No valid graphics API.");
             return nullptr;
             break;
     }

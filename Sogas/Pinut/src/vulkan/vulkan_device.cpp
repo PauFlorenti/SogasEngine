@@ -1,6 +1,11 @@
 #include <vulkan/vulkan_debug.h>
 #include <vulkan/vulkan_device.h>
 
+#ifdef WIN32
+#include <windows.h>
+
+#include <vulkan/vulkan_win32.h>
+#endif
 namespace
 {
 static const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
@@ -65,12 +70,12 @@ static std::vector<VkExtensionProperties> get_available_instance_extensions()
     vkEnumerateInstanceExtensionProperties(nullptr, &extensions_count, available_extensions.data());
 
 #ifdef _DEBUG
-    DEBUG("Available instance extenions in the system:");
+    PDEBUG("Available instance extenions in the system:");
     for (const auto& extension : available_extensions)
     {
-        DEBUG("\t%s", extension.extensionName);
+        PDEBUG("\t%s", extension.extensionName);
     }
-    DEBUG("");
+    PDEBUG("");
 #endif
     return available_extensions;
 }
@@ -84,12 +89,12 @@ static std::vector<VkLayerProperties> get_available_instance_layers()
     std::vector<VkLayerProperties> available_layers(layers_count);
     vkEnumerateInstanceLayerProperties(&layers_count, available_layers.data());
 
-    DEBUG("Available instance layers in the system:");
+    PDEBUG("Available instance layers in the system:");
     for (const auto& layer : available_layers)
     {
-        DEBUG("\t%s", layer.layerName);
+        PDEBUG("\t%s", layer.layerName);
     }
-    DEBUG("");
+    PDEBUG("");
     return available_layers;
 }
 #endif
@@ -110,15 +115,17 @@ VulkanDevice::~VulkanDevice()
     shutdown();
 }
 
-void VulkanDevice::init(const DeviceDescriptor& /*descriptor*/)
+void VulkanDevice::init(const DeviceDescriptor& descriptor)
 {
-    DEBUG("GPU Device init.");
+    PDEBUG("GPU Device init.");
     create_instance();
     create_device();
+    create_surface(descriptor.window);
 }
 
 void VulkanDevice::shutdown()
 {
+    vkDestroySurfaceKHR(vulkan_instance, vulkan_surface, nullptr);
     vkDestroyDevice(handle_device, nullptr);
     vkDestroyInstance(vulkan_instance, nullptr);
 }
@@ -161,15 +168,15 @@ bool VulkanDevice::create_instance()
         throw std::runtime_error("Required validation layers not supported.");
     }
 
-    DEBUG("Required validation layers found.");
+    PDEBUG("Required validation layers found.");
     instance_info.enabledLayerCount   = static_cast<u32>(validation_layers.size());
     instance_info.ppEnabledLayerNames = validation_layers.data();
 
     for (const auto required_layer : validation_layers)
     {
-        DEBUG("\t%s", required_layer);
+        PDEBUG("\t%s", required_layer);
     }
-    DEBUG("");
+    PDEBUG("");
 #else
     instance_info.enabledLayerCount   = 0;
     instance_info.ppEnabledLayerNames = nullptr;
@@ -181,12 +188,12 @@ bool VulkanDevice::create_instance()
     }
 
 #ifdef _DEBUG
-    DEBUG("Required instance extensions found.");
+    PDEBUG("Required instance extensions found.");
     for (const auto extension : required_instance_extensions)
     {
-        DEBUG("\t%s", extension);
+        PDEBUG("\t%s", extension);
     }
-    DEBUG("");
+    PDEBUG("");
 #endif
 
     instance_info.enabledExtensionCount   = static_cast<u32>(required_instance_extensions.size());
@@ -213,11 +220,11 @@ void VulkanDevice::pick_physical_device()
                                         available_physical_devices.data()));
 
 #ifdef _DEBUG
-    DEBUG("Available physical devices: ");
+    PDEBUG("Available physical devices: ");
     for (const auto& gpu : available_physical_devices)
     {
         vkGetPhysicalDeviceProperties(gpu, &physical_device_properties);
-        DEBUG("\tDevice name: %s\tVendor ID: %d",
+        PDEBUG("\tDevice name: %s\tVendor ID: %d",
               physical_device_properties.deviceName,
               physical_device_properties.vendorID);
     }
@@ -312,6 +319,28 @@ void VulkanDevice::create_device()
     VK_CHECK(ok);
 
     vkGetDeviceQueue(handle_device, graphics_family, 0, &graphics_queue);
+}
+
+void VulkanDevice::create_surface(void* window)
+{
+    if (window == nullptr)
+    {
+        throw std::runtime_error("Received a nullptr window.");
+    }
+
+#ifdef WIN32
+    VkWin32SurfaceCreateInfoKHR surfaceInfo = {VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
+    surfaceInfo.hwnd                        = (HWND)window;
+    surfaceInfo.hinstance                   = 0;
+
+    if (vkCreateWin32SurfaceKHR(vulkan_instance, &surfaceInfo, nullptr, &vulkan_surface) !=
+        VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create windows surface.");
+    }
+#endif
+
+    PDEBUG("Window surface created!");
 }
 
 #ifdef _DEBUG
