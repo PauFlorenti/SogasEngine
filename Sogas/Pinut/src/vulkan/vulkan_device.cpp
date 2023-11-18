@@ -119,8 +119,8 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
 {
     PDEBUG("GPU Device init.");
     create_instance();
-    create_device();
     create_surface(descriptor.window);
+    create_device();
 }
 
 void VulkanDevice::shutdown()
@@ -153,7 +153,7 @@ void VulkanDevice::destroy_texture(resources::TextureHandle /*handle*/)
 bool VulkanDevice::create_instance()
 {
     VkApplicationInfo app_info{VK_STRUCTURE_TYPE_APPLICATION_INFO};
-    app_info.apiVersion         = VK_API_VERSION_1_1;
+    app_info.apiVersion         = VK_API_VERSION_1_2;
     app_info.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     app_info.engineVersion      = VK_MAKE_VERSION(0, 1, 0);
     app_info.pApplicationName   = "SogasEngine";
@@ -225,8 +225,8 @@ void VulkanDevice::pick_physical_device()
     {
         vkGetPhysicalDeviceProperties(gpu, &physical_device_properties);
         PDEBUG("\tDevice name: %s\tVendor ID: %d",
-              physical_device_properties.deviceName,
-              physical_device_properties.vendorID);
+               physical_device_properties.deviceName,
+               physical_device_properties.vendorID);
     }
 #endif
 
@@ -254,13 +254,27 @@ std::vector<VkDeviceQueueCreateInfo> VulkanDevice::get_queues()
             queue_family.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
         {
             graphics_family = i;
+        }
+
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, vulkan_surface, &present_support);
+
+        if (present_support)
+        {
+            present_family = i;
+        }
+
+        if (graphics_family == present_family && graphics_family != VK_QUEUE_FAMILY_IGNORED &&
+            present_family != VK_QUEUE_FAMILY_IGNORED)
+        {
             break;
         }
+
         ++i;
     }
 
     std::vector<VkDeviceQueueCreateInfo> queueue_create_infos;
-    std::set<u32>                        unique_queue_families = {graphics_family};
+    std::set<u32>                        unique_queue_families = {graphics_family, present_family};
 
     f32 queue_priority = 1.0f;
     for (u32 queue_family : unique_queue_families)
@@ -319,6 +333,7 @@ void VulkanDevice::create_device()
     VK_CHECK(ok);
 
     vkGetDeviceQueue(handle_device, graphics_family, 0, &graphics_queue);
+    vkGetDeviceQueue(handle_device, present_family, 0, &present_queue);
 }
 
 void VulkanDevice::create_surface(void* window)
