@@ -2,6 +2,7 @@
 #define PCH_HPP
 
 // C++ includes
+#include <algorithm>
 #include <cassert>
 #include <set>
 #include <stdexcept>

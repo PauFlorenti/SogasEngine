@@ -14,7 +14,8 @@ static const std::vector<const char*> required_instance_extensions = {
   "VK_KHR_win32_surface",
 #endif
   VK_KHR_SURFACE_EXTENSION_NAME};
-static const std::vector<const char*> required_device_extensions = {};
+static const std::vector<const char*> required_device_extensions = {
+  VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 static bool check_required_extensions_available(
   const std::vector<VkExtensionProperties>& available_extensions)
@@ -36,6 +37,27 @@ static bool check_required_extensions_available(
     }
 
     return true;
+}
+
+static bool check_device_extension_support(const VkPhysicalDevice physical_device)
+{
+    u32 extension_count;
+    vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr);
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    vkEnumerateDeviceExtensionProperties(physical_device,
+                                         nullptr,
+                                         &extension_count,
+                                         available_extensions.data());
+
+    std::set<std::string> required_extensions(required_device_extensions.begin(),
+                                              required_device_extensions.end());
+
+    for (const auto& extension : available_extensions)
+    {
+        required_extensions.erase(extension.extensionName);
+    }
+
+    return required_extensions.empty();
 }
 
 #ifdef _DEBUG
@@ -98,6 +120,45 @@ static std::vector<VkLayerProperties> get_available_instance_layers()
     return available_layers;
 }
 #endif
+
+static pinut::vulkan::SwapchainSupportDetails
+query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR vulkan_surface)
+{
+    pinut::vulkan::SwapchainSupportDetails swapchain_support_details;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
+                                              vulkan_surface,
+                                              &swapchain_support_details.surface_capabilities);
+
+    u32 format_count = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, vulkan_surface, &format_count, nullptr);
+
+    if (format_count != 0)
+    {
+        swapchain_support_details.surface_formats.resize(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
+                                             vulkan_surface,
+                                             &format_count,
+                                             swapchain_support_details.surface_formats.data());
+    }
+
+    u32 present_count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
+                                              vulkan_surface,
+                                              &present_count,
+                                              nullptr);
+
+    if (present_count != 0)
+    {
+        swapchain_support_details.surface_present_modes.resize(present_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(
+          physical_device,
+          vulkan_surface,
+          &present_count,
+          swapchain_support_details.surface_present_modes.data());
+    }
+
+    return swapchain_support_details;
+}
 } // namespace
 namespace pinut
 {
@@ -121,10 +182,12 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     create_instance();
     create_surface(descriptor.window);
     create_device();
+    create_swapchain(descriptor); //! TODO: pass extent.
 }
 
 void VulkanDevice::shutdown()
 {
+    destroy_swapchain();
     vkDestroySurfaceKHR(vulkan_instance, vulkan_surface, nullptr);
     vkDestroyDevice(handle_device, nullptr);
     vkDestroyInstance(vulkan_instance, nullptr);
@@ -204,6 +267,34 @@ bool VulkanDevice::create_instance()
     return true;
 }
 
+#ifdef _DEBUG
+void VulkanDevice::setup_debug_messenger()
+{
+    if (!enable_validation_layers)
+        return;
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {
+      VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    debug_messenger_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+                                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    debug_messenger_create_info.pfnUserCallback = debug_callback;
+    debug_messenger_create_info.pUserData       = nullptr;
+
+    if (create_debug_utils_messengerEXT(vulkan_instance,
+                                        &debug_messenger_create_info,
+                                        nullptr,
+                                        &debug_messenger) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to setup debug messenger!");
+    }
+}
+#endif
+
 void VulkanDevice::pick_physical_device()
 {
     u32 physical_device_count = 0;
@@ -230,11 +321,16 @@ void VulkanDevice::pick_physical_device()
     }
 #endif
 
-    // TODO Make a propery physical device selector. Is device suitable?
+    // TODO Make a proper physical device selector. Is device suitable?
     // Right now just picking the first physical device available.
     ASSERT(available_physical_devices.at(0) != VK_NULL_HANDLE);
     physical_device = available_physical_devices.at(0);
     vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
+
+    if (!check_device_extension_support(physical_device))
+    {
+        throw std::runtime_error("Selected device does not support required extensions.");
+    }
 }
 
 std::vector<VkDeviceQueueCreateInfo> VulkanDevice::get_queues()
@@ -358,32 +454,151 @@ void VulkanDevice::create_surface(void* window)
     PDEBUG("Window surface created!");
 }
 
-#ifdef _DEBUG
-void VulkanDevice::setup_debug_messenger()
+void VulkanDevice::create_swapchain(const DeviceDescriptor& descriptor)
 {
-    if (!enable_validation_layers)
-        return;
+    const auto swapchain_support = query_swapchain_support(physical_device, vulkan_surface);
 
-    VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {
-      VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
-    debug_messenger_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debug_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-                                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-    debug_messenger_create_info.pfnUserCallback = debug_callback;
-    debug_messenger_create_info.pUserData       = nullptr;
-
-    if (create_debug_utils_messengerEXT(vulkan_instance,
-                                        &debug_messenger_create_info,
-                                        nullptr,
-                                        &debug_messenger) != VK_SUCCESS)
+    if (swapchain_support.surface_formats.empty() ||
+        swapchain_support.surface_present_modes.empty())
     {
-        throw std::runtime_error("Failed to setup debug messenger!");
+        throw std::runtime_error("Swapchain surface formats and present modes are not valid.");
+    }
+
+    // Choose format surface
+    VkSurfaceFormatKHR surface_format = {};
+    bool               found          = false;
+    for (const auto& available_format : swapchain_support.surface_formats)
+    {
+        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB &&
+            available_format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+        {
+            surface_format = available_format;
+            found          = true;
+            break;
+        }
+    }
+
+    if (found == false)
+    {
+        surface_format = swapchain_support.surface_formats.at(0);
+    }
+
+    // Choose presentation mode
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+    for (const auto& available_present_mode : swapchain_support.surface_present_modes)
+    {
+        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            present_mode = available_present_mode;
+            break;
+        }
+    }
+
+    VkExtent2D swapchain_extent;
+    if (swapchain_support.surface_capabilities.currentExtent.width != UINT_MAX)
+    {
+        swapchain_extent = swapchain_support.surface_capabilities.currentExtent;
+    }
+    else
+    {
+        VkExtent2D current_extend = {descriptor.width, descriptor.height};
+
+        current_extend.width =
+          std::clamp(current_extend.width,
+                     swapchain_support.surface_capabilities.minImageExtent.width,
+                     swapchain_support.surface_capabilities.maxImageExtent.width);
+
+        current_extend.height =
+          std::clamp(current_extend.height,
+                     swapchain_support.surface_capabilities.minImageExtent.height,
+                     swapchain_support.surface_capabilities.maxImageExtent.height);
+
+        swapchain_extent = current_extend;
+    }
+
+    swapchain_image_count = swapchain_support.surface_capabilities.minImageCount + 1;
+
+    if (swapchain_support.surface_capabilities.maxImageCount > 0 &&
+        swapchain_image_count > swapchain_support.surface_capabilities.maxImageCount)
+    {
+        swapchain_image_count = swapchain_support.surface_capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
+    swapchain_info.surface                  = vulkan_surface;
+    swapchain_info.minImageCount            = swapchain_image_count;
+    swapchain_info.imageFormat              = surface_format.format;
+    swapchain_info.imageColorSpace          = surface_format.colorSpace;
+    swapchain_info.imageExtent              = swapchain_extent;
+    swapchain_info.imageArrayLayers         = 1;
+    swapchain_info.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    if (graphics_family == present_family)
+    {
+        swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+    else
+    {
+        u32 indices[2]                       = {graphics_family, present_family};
+        swapchain_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+        swapchain_info.queueFamilyIndexCount = 2;
+        swapchain_info.pQueueFamilyIndices   = indices;
+    }
+
+    swapchain_info.preTransform   = swapchain_support.surface_capabilities.currentTransform;
+    swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchain_info.presentMode    = present_mode;
+    swapchain_info.clipped        = VK_TRUE;
+    swapchain_info.oldSwapchain   = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(handle_device, &swapchain_info, nullptr, &swapchain) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create the swapchain");
+    }
+
+    PDEBUG("Swapchain created!");
+
+    u32 image_count;
+    vkGetSwapchainImagesKHR(handle_device, swapchain, &image_count, nullptr);
+    swapchain_images.resize(image_count);
+    vkGetSwapchainImagesKHR(handle_device, swapchain, &image_count, swapchain_images.data());
+
+    swapchain_image_views.resize(image_count);
+
+    for (u32 index = 0; index < image_count; ++index)
+    {
+        VkImageViewCreateInfo image_view_info         = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        image_view_info.image                         = swapchain_images[index];
+        image_view_info.viewType                      = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_info.format                        = surface_format.format;
+        image_view_info.components.r                  = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_info.components.g                  = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_info.components.b                  = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_info.components.a                  = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_info.subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_view_info.subresourceRange.baseMipLevel = 0;
+        image_view_info.subresourceRange.levelCount   = 1;
+        image_view_info.subresourceRange.baseArrayLayer = 0;
+        image_view_info.subresourceRange.layerCount     = 1;
+
+        if (vkCreateImageView(handle_device, &image_view_info, nullptr, &swapchain_image_views[index]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create swapchain image view.");
+        }
     }
 }
-#endif
+
+void VulkanDevice::destroy_swapchain()
+{
+    for (auto image_view : swapchain_image_views)
+    {
+        vkDestroyImageView(handle_device, image_view, nullptr);
+    }
+
+    // No need to destroy swapchain images here since they were not created by us.
+
+    vkDestroySwapchainKHR(handle_device, swapchain, nullptr);
+}
+
 } // namespace vulkan
 } // namespace pinut

@@ -7,6 +7,14 @@ namespace pinut
 {
 namespace vulkan
 {
+
+struct SwapchainSupportDetails
+{
+    VkSurfaceCapabilitiesKHR        surface_capabilities;
+    std::vector<VkSurfaceFormatKHR> surface_formats;
+    std::vector<VkPresentModeKHR>   surface_present_modes;
+};
+
 class VulkanDevice : public GPUDevice
 {
   public:
@@ -31,10 +39,15 @@ class VulkanDevice : public GPUDevice
     void                                 create_device();
     void                                 create_surface(void* window);
 
+    // Swapchain
+    void create_swapchain(const DeviceDescriptor& descriptor);
+    void destroy_swapchain();
+
     VkDevice         handle_device   = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkInstance       vulkan_instance = VK_NULL_HANDLE;
     VkSurfaceKHR     vulkan_surface  = VK_NULL_HANDLE;
+    VkSwapchainKHR   swapchain       = VK_NULL_HANDLE;
 
     VkPhysicalDeviceProperties physical_device_properties;
 
@@ -52,7 +65,11 @@ class VulkanDevice : public GPUDevice
     VkQueue present_queue  = VK_NULL_HANDLE;
     VkQueue transfer_queue = VK_NULL_HANDLE;
 
-    u32 frame_count = 0; // Number of frames since the beginning of the application.
+    u32 frame_count           = 0; // Number of frames since the beginning of the application.
+    u32 swapchain_image_count = 0;
+
+    std::vector<VkImage>     swapchain_images;
+    std::vector<VkImageView> swapchain_image_views;
 };
 } // namespace vulkan
 } // namespace pinut
