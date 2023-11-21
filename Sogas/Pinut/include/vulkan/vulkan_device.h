@@ -1,22 +1,15 @@
 #pragma once
 
 #include <render_device.h>
+#include <vulkan/utils/vulkan_pipeline_builder.h>
+#include <vulkan/utils/vulkan_shader_loader.h>
+#include <vulkan/utils/vulkan_swapchain_builder.h>
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_pipeline_builder.h>
-#include <vulkan/vulkan_shader_loader.h>
 
 namespace pinut
 {
 namespace vulkan
 {
-
-struct SwapchainSupportDetails
-{
-    VkSurfaceCapabilitiesKHR        surface_capabilities;
-    std::vector<VkSurfaceFormatKHR> surface_formats;
-    std::vector<VkPresentModeKHR>   surface_present_modes;
-};
-
 class VulkanDevice : public GPUDevice
 {
   public:
@@ -25,8 +18,11 @@ class VulkanDevice : public GPUDevice
 
     void init(const DeviceDescriptor& descriptor) override;
     void shutdown() override;
+    void resize(u32 width, u32 height);
 
+    //! TODO: temporal function
     void update() override;
+    //! end temporal
 
     resources::BufferHandle  create_buffer(const resources::BufferDescriptor& descriptor) override;
     resources::TextureHandle create_texture(
@@ -43,26 +39,28 @@ class VulkanDevice : public GPUDevice
     void                                 create_device();
     void                                 create_surface(void* window);
 
-    // Swapchain
-    void create_swapchain(const DeviceDescriptor& descriptor);
+    // Swapchain functions
+    void create_swapchain();
     void destroy_swapchain();
+    void recreate_swapchain();
 
-    VkDevice         handle_device   = VK_NULL_HANDLE;
+    // Window handle
+    void* window_handle = nullptr;
+
+    // Basic initialization handles
+    VkDevice         device          = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkInstance       vulkan_instance = VK_NULL_HANDLE;
     VkSurfaceKHR     vulkan_surface  = VK_NULL_HANDLE;
-    VkSwapchainKHR   swapchain       = VK_NULL_HANDLE;
 
-    VkFormat swapchain_format;
-
-    VkPhysicalDeviceProperties physical_device_properties;
-
-#ifdef _DEBUG
-    VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
-#endif
-
+    VkPhysicalDeviceProperties           physical_device_properties;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 
+    VkExtent2D extent{512, 512};
+    VkExtent2D new_extent{0, 0};
+    bool minimized = false;
+
+    // Queues
     u32 graphics_family = VK_QUEUE_FAMILY_IGNORED;
     u32 present_family  = VK_QUEUE_FAMILY_IGNORED;
     u32 transfer_family = VK_QUEUE_FAMILY_IGNORED;
@@ -71,18 +69,25 @@ class VulkanDevice : public GPUDevice
     VkQueue present_queue  = VK_NULL_HANDLE;
     VkQueue transfer_queue = VK_NULL_HANDLE;
 
-    u32 frame_count           = 0; // Number of frames since the beginning of the application.
-    u32 swapchain_image_count = 0;
+    // Swapchain variables
+    Swapchain swapchain;
 
     std::vector<VkFramebuffer> framebuffers;
     std::vector<VkImage>       swapchain_images;
     std::vector<VkImageView>   swapchain_image_views;
 
-    VulkanShaderLoader vulkan_shader_loader;
-    VkShaderModule     vertex_shader_module   = VK_NULL_HANDLE;
-    VkShaderModule     fragment_shader_module = VK_NULL_HANDLE;
+#ifdef _DEBUG
+    VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
+#endif
 
+    // Class helpers
+    VulkanShaderLoader    vulkan_shader_loader;
     VulkanPipelineBuilder pipeline_builder;
+
+    // Default triangle drawing. Probably gonna be removed from here.
+    //! Temporal
+    VkShaderModule vertex_shader_module   = VK_NULL_HANDLE;
+    VkShaderModule fragment_shader_module = VK_NULL_HANDLE;
 
     VkCommandPool   command_pool;
     VkCommandBuffer cmd;
@@ -93,7 +98,8 @@ class VulkanDevice : public GPUDevice
 
     VkPipeline       triangle_pipeline;
     VkPipelineLayout triangle_pipeline_layout;
-    VkRenderPass     render_pass; //! Default render pass ... temporal
+    VkRenderPass     render_pass;
+    //! End temporal block
 };
 } // namespace vulkan
 } // namespace pinut

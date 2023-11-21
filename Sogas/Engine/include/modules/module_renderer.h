@@ -23,6 +23,7 @@ class RendererModule : public IModule
     void render() override;
     void render_ui() override{};
     void render_debug() override{};
+    void resize_window(u32 width, u32 height) override;
 
   private:
     //! Not a shared_ptr<pinut::GPUDevice> due to C26495.

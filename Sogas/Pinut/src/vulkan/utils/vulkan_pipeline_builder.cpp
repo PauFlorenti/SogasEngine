@@ -1,4 +1,4 @@
-#include <vulkan/vulkan_pipeline_builder.h>
+#include <vulkan/utils/vulkan_pipeline_builder.h>
 
 namespace pinut
 {
@@ -32,6 +32,7 @@ VkPipeline VulkanPipelineBuilder::build_pipeline(VkDevice device, VkRenderPass r
     info.layout                       = pipeline_layout;
     info.renderPass                   = render_pass;
     info.subpass                      = 0;
+    info.pDynamicState                = &dynamic_state;
     info.basePipelineHandle           = VK_NULL_HANDLE;
 
     VkPipeline pipeline;

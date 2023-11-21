@@ -1,4 +1,4 @@
-#include <vulkan/vulkan_shader_loader.h>
+#include <vulkan/utils/vulkan_shader_loader.h>
 
 #include <fstream>
 

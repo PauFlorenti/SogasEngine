@@ -28,6 +28,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PostQuitMessage(0);
             break;
 
+        case WM_SIZE:
+            RECT r;
+            GetClientRect(hWnd, &r);
+            sogas::engine::Engine::Get().resize(r.right - r.left, r.bottom - r.top);
+            break;
+
         case WM_SYSCHAR:
             if (wParam == VK_RETURN && (HIWORD(lParam) & KF_ALTDOWN))
             {
@@ -69,9 +75,19 @@ namespace sogas
 {
 namespace engine
 {
+
+Engine* Engine::engine_instance = nullptr;
+
+Engine& Engine::Get()
+{
+    return *engine_instance;
+}
+
 void Engine::init()
 {
     PDEBUG("Initializing engine!");
+
+    engine_instance = this;
 
     // TODO If more than one main window ... (should not happen) close the program only when the last is closed.
     // Should have a way to check for that ... maybe a vector or array of windows.
@@ -90,7 +106,8 @@ void Engine::init()
     // Entity module
     module_manager.register_module(std::make_shared<modules::EntityModule>("entity"));
     module_manager.register_module(std::make_shared<modules::input::InputModule>("input"));
-    module_manager.register_module(std::make_shared<modules::RendererModule>("renderer", platform::get_window_handle(window)));
+    module_manager.register_module(
+      std::make_shared<modules::RendererModule>("renderer", platform::get_window_handle(window)));
 
     // TODO register standalone game components
 
@@ -124,6 +141,11 @@ void Engine::shutdown()
     PDEBUG("Shuting down engine!");
     platform::remove_window(window);
     module_manager.clear();
+}
+
+void Engine::resize(u32 width, u32 height)
+{
+    module_manager.resize_window(width, height);
 }
 
 void Engine::do_frame()

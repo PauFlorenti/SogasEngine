@@ -26,6 +26,7 @@ class GPUDevice
 
     virtual void init(const DeviceDescriptor& descriptor) = 0;
     virtual void shutdown()                               = 0;
+    virtual void resize(u32 width, u32 height)            = 0;
 
     //! Begin Temporal block
     virtual void update() = 0;

@@ -31,5 +31,9 @@ void RendererModule::render()
 {
     renderer->update();
 }
+void RendererModule::resize_window(u32 width, u32 height)
+{
+    renderer->resize(width, height);
+}
 } // namespace modules
 } // namespace sogas

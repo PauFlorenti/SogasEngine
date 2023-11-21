@@ -22,6 +22,7 @@ class InputModule final : public IModule
     void render() override;
     void render_ui() override;
     void render_debug() override;
+    void resize_window(u32, u32) override{};
 };
 } // namespace input
 } // namespace modules

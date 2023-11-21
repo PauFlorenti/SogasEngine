@@ -18,6 +18,7 @@ class VulkanPipelineBuilder
     VkPipelineColorBlendAttachmentState          color_blend_attachment;
     VkPipelineMultisampleStateCreateInfo         multisampling;
     VkPipelineLayout                             pipeline_layout;
+    VkPipelineDynamicStateCreateInfo             dynamic_state;
 
     VkPipeline build_pipeline(VkDevice device, VkRenderPass render_pass);
 };

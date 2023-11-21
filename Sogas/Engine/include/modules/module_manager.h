@@ -22,6 +22,7 @@ class ModuleManager
     void render();
     void render_ui();
     void render_debug();
+    void resize_window(u32 width, u32 height);
 
     void register_module(std::shared_ptr<IModule> module);
     void register_game_module(std::shared_ptr<IModule> module);

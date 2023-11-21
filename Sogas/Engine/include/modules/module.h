@@ -19,12 +19,13 @@ class IModule
     }
 
   protected:
-    virtual bool start()                = 0;
-    virtual void stop()                 = 0;
-    virtual void update(f32 delta_time) = 0;
-    virtual void render()               = 0;
-    virtual void render_ui()            = 0;
-    virtual void render_debug()         = 0;
+    virtual bool start()                              = 0;
+    virtual void stop()                               = 0;
+    virtual void update(f32 delta_time)               = 0;
+    virtual void render()                             = 0;
+    virtual void render_ui()                          = 0;
+    virtual void render_debug()                       = 0;
+    virtual void resize_window(u32 width, u32 height) = 0;
 
   private:
     bool do_start()

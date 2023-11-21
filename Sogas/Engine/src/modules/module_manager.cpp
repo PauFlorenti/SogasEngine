@@ -61,6 +61,14 @@ void ModuleManager::render_debug()
     }
 }
 
+void ModuleManager::resize_window(u32 width, u32 height)
+{
+    for (const auto& module : render_modules)
+    {
+        module->resize_window(width, height);
+    }
+}
+
 void ModuleManager::register_module(std::shared_ptr<IModule> module)
 {
     registered_modules[module->get_name()] = module;

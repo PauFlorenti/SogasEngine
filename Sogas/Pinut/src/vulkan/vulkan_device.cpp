@@ -1,3 +1,4 @@
+#include <vulkan/utils/vulkan_swapchain_builder.h>
 #include <vulkan/vulkan_debug.h>
 #include <vulkan/vulkan_device.h>
 
@@ -120,45 +121,6 @@ static std::vector<VkLayerProperties> get_available_instance_layers()
     return available_layers;
 }
 #endif
-
-static pinut::vulkan::SwapchainSupportDetails
-query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR vulkan_surface)
-{
-    pinut::vulkan::SwapchainSupportDetails swapchain_support_details;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device,
-                                              vulkan_surface,
-                                              &swapchain_support_details.surface_capabilities);
-
-    u32 format_count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, vulkan_surface, &format_count, nullptr);
-
-    if (format_count != 0)
-    {
-        swapchain_support_details.surface_formats.resize(format_count);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,
-                                             vulkan_surface,
-                                             &format_count,
-                                             swapchain_support_details.surface_formats.data());
-    }
-
-    u32 present_count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,
-                                              vulkan_surface,
-                                              &present_count,
-                                              nullptr);
-
-    if (present_count != 0)
-    {
-        swapchain_support_details.surface_present_modes.resize(present_count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(
-          physical_device,
-          vulkan_surface,
-          &present_count,
-          swapchain_support_details.surface_present_modes.data());
-    }
-
-    return swapchain_support_details;
-}
 } // namespace
 namespace pinut
 {
@@ -178,56 +140,19 @@ VulkanDevice::~VulkanDevice()
 
 void VulkanDevice::init(const DeviceDescriptor& descriptor)
 {
+    window_handle = descriptor.window;
+    extent        = {descriptor.width, descriptor.height};
+
     PDEBUG("GPU Device init.");
     create_instance();
-    create_surface(descriptor.window);
+    create_surface(window_handle);
     create_device();
-    create_swapchain(descriptor); //! TODO: pass extent.
 
-    // Create command pool
-    VkCommandPoolCreateInfo cmd_pool_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-    cmd_pool_info.queueFamilyIndex        = graphics_family;
-    cmd_pool_info.flags =
-      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Allow reseting of individual cmd.
+    create_swapchain();
 
-    VK_CHECK(vkCreateCommandPool(handle_device, &cmd_pool_info, nullptr, &command_pool));
-
-    // Allocate main command buffer.
-    VkCommandBufferAllocateInfo cmd_alloc_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-    cmd_alloc_info.commandBufferCount          = 1;
-    cmd_alloc_info.commandPool                 = command_pool;
-    cmd_alloc_info.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-    VK_CHECK(vkAllocateCommandBuffers(handle_device, &cmd_alloc_info, &cmd));
-
-    // Create semaphores and fence
-    VkSemaphoreCreateInfo semaphore_info = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    VK_CHECK(vkCreateSemaphore(handle_device, &semaphore_info, nullptr, &render_semaphore));
-    VK_CHECK(vkCreateSemaphore(handle_device, &semaphore_info, nullptr, &present_semaphore));
-
-    VkFenceCreateInfo fence_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    fence_info.flags             = VK_FENCE_CREATE_SIGNALED_BIT;
-    VK_CHECK(vkCreateFence(handle_device, &fence_info, nullptr, &render_fence));
-
-    // Create shaders
-    vertex_shader_module = vulkan_shader_loader.create_shader_module(
-      handle_device,
-      "../../Sogas/Engine/data/shaders/bin/triangle.vert.spv");
-
-    fragment_shader_module = vulkan_shader_loader.create_shader_module(
-      handle_device,
-      "../../Sogas/Engine/data/shaders/bin/triangle.frag.spv");
-
-    if (!vertex_shader_module || !fragment_shader_module)
-    {
-        PFATAL("Failed to create shaders!");
-    }
-
-    // TODO: Handle pipeline creation differently ...
-    // Data should be given from engine, not hardcoded in renderer.
-
+    // Move temporal render pass here for the swapchain's framebuffers creation
     VkAttachmentDescription color_attachment = {};
-    color_attachment.format                  = swapchain_format;
+    color_attachment.format                  = swapchain.surface_format.format;
     color_attachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
     color_attachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
     color_attachment.storeOp                 = VK_ATTACHMENT_STORE_OP_STORE;
@@ -251,13 +176,12 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     render_pass_info.subpassCount           = 1;
     render_pass_info.pSubpasses             = &subpass;
 
-    VK_CHECK(vkCreateRenderPass(handle_device, &render_pass_info, nullptr, &render_pass));
+    VK_CHECK(vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass));
 
-    // TODO: Handle framebuffer creation somewhere else.
     VkFramebufferCreateInfo framebuffer_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
     framebuffer_info.renderPass              = render_pass;
-    framebuffer_info.width                   = descriptor.width;
-    framebuffer_info.height                  = descriptor.height;
+    framebuffer_info.width                   = extent.width;
+    framebuffer_info.height                  = extent.height;
     framebuffer_info.attachmentCount         = 1;
     framebuffer_info.layers                  = 1;
 
@@ -268,9 +192,50 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     {
         framebuffer_info.pAttachments = &swapchain_image_views.at(i);
 
-        VK_CHECK(
-          vkCreateFramebuffer(handle_device, &framebuffer_info, nullptr, &framebuffers.at(i)));
+        VK_CHECK(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffers.at(i)));
     }
+
+    // Create command pool
+    VkCommandPoolCreateInfo cmd_pool_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    cmd_pool_info.queueFamilyIndex        = graphics_family;
+    cmd_pool_info.flags =
+      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Allow reseting of individual cmd.
+
+    VK_CHECK(vkCreateCommandPool(device, &cmd_pool_info, nullptr, &command_pool));
+
+    // Allocate main command buffer.
+    VkCommandBufferAllocateInfo cmd_alloc_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    cmd_alloc_info.commandBufferCount          = 1;
+    cmd_alloc_info.commandPool                 = command_pool;
+    cmd_alloc_info.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &cmd));
+
+    // Create semaphores and fence
+    VkSemaphoreCreateInfo semaphore_info = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VK_CHECK(vkCreateSemaphore(device, &semaphore_info, nullptr, &render_semaphore));
+    VK_CHECK(vkCreateSemaphore(device, &semaphore_info, nullptr, &present_semaphore));
+
+    VkFenceCreateInfo fence_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    fence_info.flags             = VK_FENCE_CREATE_SIGNALED_BIT;
+    VK_CHECK(vkCreateFence(device, &fence_info, nullptr, &render_fence));
+
+    // Create shaders
+    vertex_shader_module = vulkan_shader_loader.create_shader_module(
+      device,
+      "../../Sogas/Engine/data/shaders/bin/triangle.vert.spv");
+
+    fragment_shader_module = vulkan_shader_loader.create_shader_module(
+      device,
+      "../../Sogas/Engine/data/shaders/bin/triangle.frag.spv");
+
+    if (!vertex_shader_module || !fragment_shader_module)
+    {
+        PFATAL("Failed to create shaders!");
+    }
+
+    // TODO: Handle pipeline creation differently ...
+    // Data should be given from engine, not hardcoded in renderer.
 
     // TODO: Add all necessary data to the pipeline builder to build the pipeline.
 
@@ -326,21 +291,27 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     VkViewport viewport;
     viewport.x        = 0;
     viewport.y        = 0;
-    viewport.width    = static_cast<float>(descriptor.width);
-    viewport.height   = static_cast<float>(descriptor.height);
+    viewport.width    = static_cast<float>(extent.width);
+    viewport.height   = static_cast<float>(extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor;
     scissor.offset = {0, 0};
-    scissor.extent = {descriptor.width, descriptor.height};
+    scissor.extent = extent;
+
+    std::vector<VkDynamicState> dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT,
+                                                  VK_DYNAMIC_STATE_SCISSOR};
+
+    VkPipelineDynamicStateCreateInfo dynamic_state_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+    dynamic_state_info.dynamicStateCount = static_cast<u32>(dynamic_states.size());
+    dynamic_state_info.pDynamicStates    = dynamic_states.data();
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-    VK_CHECK(vkCreatePipelineLayout(handle_device,
-                                    &pipeline_layout_info,
-                                    nullptr,
-                                    &triangle_pipeline_layout));
+    VK_CHECK(
+      vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &triangle_pipeline_layout));
 
     pipeline_builder.shader_stages.push_back(vertex_shader_stage_info);
     pipeline_builder.shader_stages.push_back(fragment_shader_stage_info);
@@ -351,44 +322,54 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     pipeline_builder.color_blend_attachment = color_blend_info;
     pipeline_builder.viewport               = viewport;
     pipeline_builder.scissor                = scissor;
+    pipeline_builder.dynamic_state          = dynamic_state_info;
     pipeline_builder.pipeline_layout        = triangle_pipeline_layout;
 
-    triangle_pipeline = pipeline_builder.build_pipeline(handle_device, render_pass);
+    triangle_pipeline = pipeline_builder.build_pipeline(device, render_pass);
 }
 
 void VulkanDevice::shutdown()
 {
-    VK_CHECK(vkWaitForFences(handle_device, 1, &render_fence, VK_TRUE, UINT64_MAX));
-    VK_CHECK(vkDeviceWaitIdle(handle_device));
+    VK_CHECK(vkWaitForFences(device, 1, &render_fence, VK_TRUE, UINT64_MAX));
+    VK_CHECK(vkDeviceWaitIdle(device));
 
-    vkDestroyPipeline(handle_device, triangle_pipeline, nullptr);
-    vkDestroyPipelineLayout(handle_device, triangle_pipeline_layout, nullptr);
-    vkDestroyShaderModule(handle_device, vertex_shader_module, nullptr);
-    vkDestroyShaderModule(handle_device, fragment_shader_module, nullptr);
-
-    for (auto& framebuffer : framebuffers)
-    {
-        vkDestroyFramebuffer(handle_device, framebuffer, nullptr);
-    }
-
-    vkDestroyFence(handle_device, render_fence, nullptr);
-    vkDestroySemaphore(handle_device, present_semaphore, nullptr);
-    vkDestroySemaphore(handle_device, render_semaphore, nullptr);
-    vkDestroyCommandPool(handle_device, command_pool, nullptr);
+    vkDestroyPipeline(device, triangle_pipeline, nullptr);
+    vkDestroyPipelineLayout(device, triangle_pipeline_layout, nullptr);
+    vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+    vkDestroyShaderModule(device, fragment_shader_module, nullptr);
+    vkDestroyFence(device, render_fence, nullptr);
+    vkDestroySemaphore(device, present_semaphore, nullptr);
+    vkDestroySemaphore(device, render_semaphore, nullptr);
+    vkDestroyCommandPool(device, command_pool, nullptr);
     destroy_swapchain();
-    vkDestroyRenderPass(handle_device, render_pass, nullptr);
+    vkDestroyRenderPass(device, render_pass, nullptr);
     vkDestroySurfaceKHR(vulkan_instance, vulkan_surface, nullptr);
-    vkDestroyDevice(handle_device, nullptr);
+    vkDestroyDevice(device, nullptr);
     vkDestroyInstance(vulkan_instance, nullptr);
+}
+
+void VulkanDevice::resize(u32 width, u32 height)
+{
+    new_extent = {width, height};
+
+    if (minimized)
+    {
+        recreate_swapchain();
+    }
 }
 
 void VulkanDevice::update()
 {
-    VK_CHECK(vkWaitForFences(handle_device, 1, &render_fence, VK_TRUE, UINT64_MAX));
+    VK_CHECK(vkWaitForFences(device, 1, &render_fence, VK_TRUE, UINT64_MAX));
+
+    if (minimized)
+    {
+        return;
+    }
 
     u32  swapchainIndex;
-    auto ok = vkAcquireNextImageKHR(handle_device,
-                                    swapchain,
+    auto ok = vkAcquireNextImageKHR(device,
+                                    swapchain.swapchain,
                                     UINT64_MAX,
                                     present_semaphore,
                                     nullptr,
@@ -396,7 +377,7 @@ void VulkanDevice::update()
 
     if (ok == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        // TODO: Recreate swapchain ...
+        recreate_swapchain();
         return;
     }
     else if (ok != VK_SUCCESS && ok != VK_SUBOPTIMAL_KHR)
@@ -405,7 +386,7 @@ void VulkanDevice::update()
     }
 
     // Reset fence only when we know we are submitting work to the gpu.
-    VK_CHECK(vkResetFences(handle_device, 1, &render_fence));
+    VK_CHECK(vkResetFences(device, 1, &render_fence));
 
     VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     cmd_begin_info.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -421,11 +402,25 @@ void VulkanDevice::update()
     render_pass_begin_info.framebuffer           = framebuffers.at(swapchainIndex);
     render_pass_begin_info.renderPass            = render_pass;
     render_pass_begin_info.renderArea.offset     = {0, 0};
-    render_pass_begin_info.renderArea.extent     = {1280, 720};
+    render_pass_begin_info.renderArea.extent     = extent;
 
     vkCmdBeginRenderPass(cmd, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, triangle_pipeline);
+
+    VkViewport viewport = {};
+    viewport.x          = 0;
+    viewport.y          = 0;
+    viewport.width      = static_cast<f32>(extent.width);
+    viewport.height     = static_cast<f32>(extent.height);
+
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor = {};
+    scissor.extent   = extent;
+    scissor.offset   = {0, 0};
+
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     vkCmdDraw(cmd, 3, 1, 0, 0);
 
@@ -448,7 +443,7 @@ void VulkanDevice::update()
 
     VkPresentInfoKHR present_info   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     present_info.swapchainCount     = 1;
-    present_info.pSwapchains        = &swapchain;
+    present_info.pSwapchains        = &swapchain.swapchain;
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores    = &render_semaphore;
     present_info.pImageIndices      = &swapchainIndex;
@@ -456,7 +451,7 @@ void VulkanDevice::update()
     ok = vkQueuePresentKHR(present_queue, &present_info);
     if (ok == VK_ERROR_OUT_OF_DATE_KHR || ok == VK_SUBOPTIMAL_KHR)
     {
-        // TODO: recreate swapchain, probably due to resize.
+        recreate_swapchain();
     }
     else if (ok != VK_SUCCESS)
     {
@@ -696,11 +691,11 @@ void VulkanDevice::create_device()
         device_create_info.ppEnabledLayerNames = nullptr;
     }
 
-    VkResult ok = vkCreateDevice(physical_device, &device_create_info, nullptr, &handle_device);
+    VkResult ok = vkCreateDevice(physical_device, &device_create_info, nullptr, &device);
     VK_CHECK(ok);
 
-    vkGetDeviceQueue(handle_device, graphics_family, 0, &graphics_queue);
-    vkGetDeviceQueue(handle_device, present_family, 0, &present_queue);
+    vkGetDeviceQueue(device, graphics_family, 0, &graphics_queue);
+    vkGetDeviceQueue(device, present_family, 0, &present_queue);
 }
 
 void VulkanDevice::create_surface(void* window)
@@ -725,155 +720,85 @@ void VulkanDevice::create_surface(void* window)
     PDEBUG("Window surface created!");
 }
 
-void VulkanDevice::create_swapchain(const DeviceDescriptor& descriptor)
+void VulkanDevice::create_swapchain()
 {
-    const auto swapchain_support = query_swapchain_support(physical_device, vulkan_surface);
+    VulkanSwapchainBuilder swapchain_builder{device,
+                                             physical_device,
+                                             vulkan_surface,
+                                             graphics_family,
+                                             present_family};
 
-    if (swapchain_support.surface_formats.empty() ||
-        swapchain_support.surface_present_modes.empty())
-    {
-        throw std::runtime_error("Swapchain surface formats and present modes are not valid.");
-    }
+    swapchain = swapchain_builder.use_default_format()
+                  .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+                  .set_desired_extent(extent.width, extent.height)
+                  .build();
 
-    // Choose format surface
-    VkSurfaceFormatKHR surface_format = {};
-    bool               found          = false;
-    for (const auto& available_format : swapchain_support.surface_formats)
-    {
-        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB &&
-            available_format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
-        {
-            surface_format = available_format;
-            found          = true;
-            break;
-        }
-    }
-
-    if (found == false)
-    {
-        surface_format = swapchain_support.surface_formats.at(0);
-    }
-
-    // Choose presentation mode
-    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
-    for (const auto& available_present_mode : swapchain_support.surface_present_modes)
-    {
-        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
-        {
-            present_mode = available_present_mode;
-            break;
-        }
-    }
-
-    VkExtent2D swapchain_extent;
-    if (swapchain_support.surface_capabilities.currentExtent.width != UINT_MAX)
-    {
-        swapchain_extent = swapchain_support.surface_capabilities.currentExtent;
-    }
-    else
-    {
-        VkExtent2D current_extend = {descriptor.width, descriptor.height};
-
-        current_extend.width =
-          std::clamp(current_extend.width,
-                     swapchain_support.surface_capabilities.minImageExtent.width,
-                     swapchain_support.surface_capabilities.maxImageExtent.width);
-
-        current_extend.height =
-          std::clamp(current_extend.height,
-                     swapchain_support.surface_capabilities.minImageExtent.height,
-                     swapchain_support.surface_capabilities.maxImageExtent.height);
-
-        swapchain_extent = current_extend;
-    }
-
-    swapchain_image_count = swapchain_support.surface_capabilities.minImageCount + 1;
-
-    if (swapchain_support.surface_capabilities.maxImageCount > 0 &&
-        swapchain_image_count > swapchain_support.surface_capabilities.maxImageCount)
-    {
-        swapchain_image_count = swapchain_support.surface_capabilities.maxImageCount;
-    }
-
-    swapchain_format = surface_format.format;
-
-    VkSwapchainCreateInfoKHR swapchain_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
-    swapchain_info.surface                  = vulkan_surface;
-    swapchain_info.minImageCount            = swapchain_image_count;
-    swapchain_info.imageFormat              = swapchain_format;
-    swapchain_info.imageColorSpace          = surface_format.colorSpace;
-    swapchain_info.imageExtent              = swapchain_extent;
-    swapchain_info.imageArrayLayers         = 1;
-    swapchain_info.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    if (graphics_family == present_family)
-    {
-        swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    }
-    else
-    {
-        u32 indices[2]                       = {graphics_family, present_family};
-        swapchain_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
-        swapchain_info.queueFamilyIndexCount = 2;
-        swapchain_info.pQueueFamilyIndices   = indices;
-    }
-
-    swapchain_info.preTransform   = swapchain_support.surface_capabilities.currentTransform;
-    swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchain_info.presentMode    = present_mode;
-    swapchain_info.clipped        = VK_TRUE;
-    swapchain_info.oldSwapchain   = VK_NULL_HANDLE;
-
-    if (vkCreateSwapchainKHR(handle_device, &swapchain_info, nullptr, &swapchain) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create the swapchain");
-    }
-
-    PDEBUG("Swapchain created!");
-
-    u32 image_count;
-    vkGetSwapchainImagesKHR(handle_device, swapchain, &image_count, nullptr);
-    swapchain_images.resize(image_count);
-    vkGetSwapchainImagesKHR(handle_device, swapchain, &image_count, swapchain_images.data());
-
-    swapchain_image_views.resize(image_count);
-
-    for (u32 index = 0; index < image_count; ++index)
-    {
-        VkImageViewCreateInfo image_view_info         = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        image_view_info.image                         = swapchain_images[index];
-        image_view_info.viewType                      = VK_IMAGE_VIEW_TYPE_2D;
-        image_view_info.format                        = swapchain_format;
-        image_view_info.components.r                  = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_info.components.g                  = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_info.components.b                  = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_info.components.a                  = VK_COMPONENT_SWIZZLE_IDENTITY;
-        image_view_info.subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view_info.subresourceRange.baseMipLevel = 0;
-        image_view_info.subresourceRange.levelCount   = 1;
-        image_view_info.subresourceRange.baseArrayLayer = 0;
-        image_view_info.subresourceRange.layerCount     = 1;
-
-        if (vkCreateImageView(handle_device,
-                              &image_view_info,
-                              nullptr,
-                              &swapchain_image_views[index]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create swapchain image view.");
-        }
-    }
+    swapchain_images      = swapchain.get_images();
+    swapchain_image_views = swapchain.get_image_views();
 }
 
 void VulkanDevice::destroy_swapchain()
 {
+    for (auto& framebuffer : framebuffers)
+    {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+
     for (auto image_view : swapchain_image_views)
     {
-        vkDestroyImageView(handle_device, image_view, nullptr);
+        vkDestroyImageView(device, image_view, nullptr);
     }
 
     // No need to destroy swapchain images here since they were not created by us.
+    vkDestroySwapchainKHR(device, swapchain.swapchain, nullptr);
+}
 
-    vkDestroySwapchainKHR(handle_device, swapchain, nullptr);
+void VulkanDevice::recreate_swapchain()
+{
+    vkDeviceWaitIdle(device);
+
+    if (!minimized)
+    {
+        // Window closing.
+        if (new_extent.width == 0 && new_extent.height == 0)
+        {
+            return;
+        }
+
+        destroy_swapchain();
+        vkDestroySurfaceKHR(vulkan_instance, vulkan_surface, nullptr);
+    }
+
+    extent = new_extent;
+
+    if (extent.width == 0 || extent.height == 0)
+    {
+        minimized = true;
+        return;
+    }
+
+    minimized = false;
+
+    create_surface(window_handle);
+
+    create_swapchain();
+
+    VkFramebufferCreateInfo framebuffer_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+    framebuffer_info.renderPass              = render_pass;
+    framebuffer_info.width                   = extent.width;
+    framebuffer_info.height                  = extent.height;
+    framebuffer_info.attachmentCount         = 1;
+    framebuffer_info.layers                  = 1;
+
+    const u32 swapchain_images_size = static_cast<u32>(swapchain_images.size());
+    framebuffers                    = std::vector<VkFramebuffer>(swapchain_images_size);
+
+    for (u32 i = 0; i < swapchain_images_size; ++i)
+    {
+        framebuffer_info.pAttachments = &swapchain_image_views.at(i);
+
+        VK_CHECK(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffers.at(i)));
+    }
 }
 
 } // namespace vulkan
