@@ -24,6 +24,12 @@ void RendererModule::stop()
 
 void RendererModule::update(f32 /*delta_time*/)
 {
+    // TODO: renderer should not have an update function
+}
+
+void RendererModule::render()
+{
+    renderer->update();
 }
 } // namespace modules
 } // namespace sogas

@@ -3,5 +3,7 @@
     "entity",
     "input"
   ],
-  "render":[]
+  "render":[
+    "renderer"
+  ]
 }

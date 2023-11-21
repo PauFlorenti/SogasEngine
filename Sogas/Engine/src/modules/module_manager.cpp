@@ -128,7 +128,7 @@ void ModuleManager::parse_module_config(const std::string& config_file)
         ASSERT(module.get() != nullptr);
         if (module)
         {
-            update_modules.push_back(module);
+            render_modules.push_back(module);
         }
     }
 }

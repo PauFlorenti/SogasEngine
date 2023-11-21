@@ -2,6 +2,8 @@
 
 #include <render_device.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_pipeline_builder.h>
+#include <vulkan/vulkan_shader_loader.h>
 
 namespace pinut
 {
@@ -23,6 +25,8 @@ class VulkanDevice : public GPUDevice
 
     void init(const DeviceDescriptor& descriptor) override;
     void shutdown() override;
+
+    void update() override;
 
     resources::BufferHandle  create_buffer(const resources::BufferDescriptor& descriptor) override;
     resources::TextureHandle create_texture(
@@ -49,6 +53,8 @@ class VulkanDevice : public GPUDevice
     VkSurfaceKHR     vulkan_surface  = VK_NULL_HANDLE;
     VkSwapchainKHR   swapchain       = VK_NULL_HANDLE;
 
+    VkFormat swapchain_format;
+
     VkPhysicalDeviceProperties physical_device_properties;
 
 #ifdef _DEBUG
@@ -68,8 +74,26 @@ class VulkanDevice : public GPUDevice
     u32 frame_count           = 0; // Number of frames since the beginning of the application.
     u32 swapchain_image_count = 0;
 
-    std::vector<VkImage>     swapchain_images;
-    std::vector<VkImageView> swapchain_image_views;
+    std::vector<VkFramebuffer> framebuffers;
+    std::vector<VkImage>       swapchain_images;
+    std::vector<VkImageView>   swapchain_image_views;
+
+    VulkanShaderLoader vulkan_shader_loader;
+    VkShaderModule     vertex_shader_module   = VK_NULL_HANDLE;
+    VkShaderModule     fragment_shader_module = VK_NULL_HANDLE;
+
+    VulkanPipelineBuilder pipeline_builder;
+
+    VkCommandPool   command_pool;
+    VkCommandBuffer cmd;
+
+    VkSemaphore present_semaphore;
+    VkSemaphore render_semaphore;
+    VkFence     render_fence;
+
+    VkPipeline       triangle_pipeline;
+    VkPipelineLayout triangle_pipeline_layout;
+    VkRenderPass     render_pass; //! Default render pass ... temporal
 };
 } // namespace vulkan
 } // namespace pinut

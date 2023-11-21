@@ -16,5 +16,10 @@ struct TextureHandle
 {
     ResourceHandle id;
 };
+
+struct ShaderStateHandle
+{
+    ResourceHandle id;
+};
 } // namespace resources
 } // namespace pinut
