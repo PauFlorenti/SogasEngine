@@ -4,23 +4,22 @@
 
 namespace pinut
 {
+namespace resources
+{
+struct PipelineDescriptor;
+}
 namespace vulkan
 {
-class VulkanPipelineBuilder
+class VulkanPipeline
 {
   public:
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
-    VkPipelineVertexInputStateCreateInfo         vertex_input;
-    VkPipelineInputAssemblyStateCreateInfo       assembly_input;
-    VkViewport                                   viewport;
-    VkRect2D                                     scissor;
-    VkPipelineRasterizationStateCreateInfo       raster;
-    VkPipelineColorBlendAttachmentState          color_blend_attachment;
-    VkPipelineMultisampleStateCreateInfo         multisampling;
-    VkPipelineLayout                             pipeline_layout;
-    VkPipelineDynamicStateCreateInfo             dynamic_state;
+    static bool build_pipeline(VkDevice                       device,
+                               resources::PipelineDescriptor* descriptor,
+                               VkRenderPass                   render_pass);
 
-    VkPipeline build_pipeline(VkDevice device, VkRenderPass render_pass);
+    VkPipeline          pipeline        = VK_NULL_HANDLE;
+    VkPipelineLayout    pipeline_layout = VK_NULL_HANDLE;
+    VkPipelineBindPoint bind_point      = VK_PIPELINE_BIND_POINT_GRAPHICS; // Graphics as default.
 };
 } // namespace vulkan
 } // namespace pinut

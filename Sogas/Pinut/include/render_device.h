@@ -2,6 +2,8 @@
 
 #include <render_types.h>
 #include <resources/buffer.h>
+#include <resources/commandbuffer.h>
+#include <resources/renderpass.h>
 #include <resources/resources.h>
 #include <resources/texture.h>
 
@@ -28,14 +30,17 @@ class GPUDevice
     virtual void shutdown()                               = 0;
     virtual void resize(u32 width, u32 height)            = 0;
 
-    //! Begin Temporal block
-    virtual void update() = 0;
-    // End Temporal block
-
     virtual resources::BufferHandle create_buffer(
       const resources::BufferDescriptor& descriptor) = 0;
     virtual resources::TextureHandle create_texture(
       const resources::TextureDescriptor& descriptor) = 0;
+    virtual resources::RenderPassHandle create_renderpass(
+      const resources::RenderPassDescriptor& descriptor) = 0;
+
+    virtual void begin_frame() = 0;
+    virtual void end_frame()   = 0;
+
+    virtual resources::CommandBuffer* get_command_buffer(bool begin) = 0;
 
     virtual void destroy_buffer(resources::BufferHandle handle)   = 0;
     virtual void destroy_texture(resources::TextureHandle handle) = 0;

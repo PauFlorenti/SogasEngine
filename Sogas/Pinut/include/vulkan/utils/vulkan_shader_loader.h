@@ -6,12 +6,19 @@ namespace pinut
 {
 namespace vulkan
 {
+using VulkanShaderState = std::vector<VkPipelineShaderStageCreateInfo>;
+
 class VulkanShaderLoader
 {
   public:
     VulkanShaderLoader() = default;
 
-    VkShaderModule create_shader_module(VkDevice device, const char* filepath);
+    static bool      load_shader_module(const char* filepath, std::vector<u32>& out_buffer);
+    VkShaderModule   create_shader_module(VkDevice device, const char* filepath);
+    std::vector<u32> get_buffer() const
+    {
+        return buffer;
+    }
 
   private:
     bool load_shader_module(const char* filepath);

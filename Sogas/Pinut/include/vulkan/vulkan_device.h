@@ -1,10 +1,13 @@
 #pragma once
 
 #include <render_device.h>
+#include <resources/commandbuffer.h>
+#include <resources/shader_state.h>
+#include <vulkan/utils/vulkan_commandbuffer.h>
 #include <vulkan/utils/vulkan_pipeline_builder.h>
+#include <vulkan/utils/vulkan_render_pass.h>
 #include <vulkan/utils/vulkan_shader_loader.h>
 #include <vulkan/utils/vulkan_swapchain_builder.h>
-#include <vulkan/vulkan.h>
 
 namespace pinut
 {
@@ -20,16 +23,34 @@ class VulkanDevice : public GPUDevice
     void shutdown() override;
     void resize(u32 width, u32 height);
 
-    //! TODO: temporal function
-    void update() override;
-    //! end temporal
-
     resources::BufferHandle  create_buffer(const resources::BufferDescriptor& descriptor) override;
     resources::TextureHandle create_texture(
       const resources::TextureDescriptor& descriptor) override;
+    resources::RenderPassHandle create_renderpass(
+      const resources::RenderPassDescriptor& descriptor) override;
+
+    void begin_frame() override;
+    void end_frame() override;
+
+    resources::CommandBuffer* get_command_buffer(bool begin) override;
 
     void destroy_buffer(resources::BufferHandle handle) override;
     void destroy_texture(resources::TextureHandle handle) override;
+
+    static std::map<std::string, VulkanShaderState> shaders;
+    static std::map<std::string, VulkanPipeline>    pipelines;
+    static std::map<std::string, VulkanRenderPass>  render_passes;
+
+    static const u32 MAX_SWAPCHAIN_IMAGES = 3;
+
+    VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
+    u32           swapchain_index = 0;
+    u32           current_frame   = 0;
+
+    VkExtent2D get_swapchain_extent() const
+    {
+        return extent;
+    }
 
   private:
     bool                                 create_instance();
@@ -58,7 +79,7 @@ class VulkanDevice : public GPUDevice
 
     VkExtent2D extent{512, 512};
     VkExtent2D new_extent{0, 0};
-    bool minimized = false;
+    bool       minimized = false;
 
     // Queues
     u32 graphics_family = VK_QUEUE_FAMILY_IGNORED;
@@ -72,17 +93,19 @@ class VulkanDevice : public GPUDevice
     // Swapchain variables
     Swapchain swapchain;
 
-    std::vector<VkFramebuffer> framebuffers;
-    std::vector<VkImage>       swapchain_images;
-    std::vector<VkImageView>   swapchain_image_views;
+    std::vector<VkImage>     swapchain_images;
+    std::vector<VkImageView> swapchain_image_views;
+
+    VulkanCommandBuffer command_buffer[MAX_SWAPCHAIN_IMAGES];
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 #endif
 
     // Class helpers
-    VulkanShaderLoader    vulkan_shader_loader;
-    VulkanPipelineBuilder pipeline_builder;
+    VulkanShaderLoader vulkan_shader_loader;
+
+    //VulkanRenderPass* swapchain_renderpass = nullptr;
 
     // Default triangle drawing. Probably gonna be removed from here.
     //! Temporal
@@ -92,13 +115,11 @@ class VulkanDevice : public GPUDevice
     VkCommandPool   command_pool;
     VkCommandBuffer cmd;
 
-    VkSemaphore present_semaphore;
-    VkSemaphore render_semaphore;
-    VkFence     render_fence;
+    VkSemaphore present_semaphores[MAX_SWAPCHAIN_IMAGES];
+    VkSemaphore render_semaphores[MAX_SWAPCHAIN_IMAGES];
+    VkFence     render_fences[MAX_SWAPCHAIN_IMAGES];
 
-    VkPipeline       triangle_pipeline;
-    VkPipelineLayout triangle_pipeline_layout;
-    VkRenderPass     render_pass;
+    VkRenderPass render_pass;
     //! End temporal block
 };
 } // namespace vulkan

@@ -1,3 +1,5 @@
+#include "pch.hpp"
+
 #include <vulkan/utils/vulkan_shader_loader.h>
 
 #include <fstream>
@@ -20,6 +22,29 @@ bool VulkanShaderLoader::load_shader_module(const char* filepath)
 
     file.seekg(0);
     file.read((char*)(buffer.data()), file_size);
+    file.close();
+
+    return true;
+}
+
+bool VulkanShaderLoader::load_shader_module(const char* filepath, std::vector<u32>& out_buffer)
+{
+    out_buffer.clear();
+
+    std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    auto file_size = static_cast<size_t>(file.tellg());
+    ASSERT(file_size > 0);
+
+    out_buffer.resize(file_size / sizeof(u32));
+
+    file.seekg(0);
+    file.read((char*)(out_buffer.data()), file_size);
     file.close();
 
     return true;

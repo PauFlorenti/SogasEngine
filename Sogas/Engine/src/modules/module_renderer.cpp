@@ -29,7 +29,19 @@ void RendererModule::update(f32 /*delta_time*/)
 
 void RendererModule::render()
 {
-    renderer->update();
+    renderer->begin_frame();
+
+    auto cmd = renderer->get_command_buffer(true);
+
+    cmd->clear(0.3f, 0.5f, 0.3f, 1.0f);
+    cmd->bind_pass("Swapchain_renderpass");
+    cmd->bind_pipeline("triangle_pipeline");
+    cmd->set_scissors(nullptr);
+    cmd->set_viewport(nullptr);
+
+    cmd->draw(0, 3, 0, 1);
+
+    renderer->end_frame();
 }
 void RendererModule::resize_window(u32 width, u32 height)
 {
