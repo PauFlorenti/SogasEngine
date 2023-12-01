@@ -73,6 +73,16 @@ VkPresentInfoKHR present_info()
     return info;
 }
 
+VkBufferCreateInfo buffer_info(const u32 size, VkBufferUsageFlags usage)
+{
+    VkBufferCreateInfo info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    info.size               = size;
+    info.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
+    info.usage              = usage;
+
+    return info;
+}
+
 } // namespace vkinit
 } // namespace vulkan
 } // namespace pinut

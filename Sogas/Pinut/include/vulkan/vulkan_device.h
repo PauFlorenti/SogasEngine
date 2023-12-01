@@ -89,6 +89,12 @@ class VulkanDevice : public GPUDevice
     void destroy_swapchain();
     void recreate_swapchain();
 
+    // internals
+    void create_vulkan_buffer(const u32             size,
+                              VkBufferUsageFlags    usage_flags,
+                              VkMemoryPropertyFlags memory_property_flags,
+                              VulkanBuffer*         buffer);
+
     // Window handle
     void* window_handle = nullptr;
 

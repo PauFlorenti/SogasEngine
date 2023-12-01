@@ -4,15 +4,21 @@ namespace pinut
 {
 namespace resources
 {
-struct BufferDescriptor
+enum class BufferType
 {
-	u32 size = 0;
-
-	// TODO Add usage
+    VERTEX,
+    INDEX,
+    UNIFORM,
+    STORAGE,
+    STAGING,
+    COUNT
 };
 
-class Buffer
+struct BufferDescriptor
 {
+    u32        size = 0;
+    BufferType type = BufferType::VERTEX;
+    void*      data = nullptr;
 };
 } // namespace resources
 } // namespace pinut

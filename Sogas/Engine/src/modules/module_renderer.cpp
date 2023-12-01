@@ -81,24 +81,22 @@ bool RendererModule::start()
 
     PipelineDescriptor pipeline_descriptor = {};
     pipeline_descriptor.add_name("triangle_pipeline")
+      .set_topology(TopologyType::TRIANGLE)
       .add_shader_state(shader_state)
       .add_viewport(viewport_state);
 
     pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(Vertex)});
-    pipeline_descriptor.vertex_input.add_vertex_attribute({0, 0, offsetof(Vertex, position)});
-    pipeline_descriptor.vertex_input.add_vertex_attribute({1, 0, offsetof(Vertex, color)});
+    pipeline_descriptor.vertex_input.add_vertex_attribute(
+      {0, 0, offsetof(Vertex, position), VertexInputFormatType::VEC3});
+    pipeline_descriptor.vertex_input.add_vertex_attribute(
+      {1, 0, offsetof(Vertex, color), VertexInputFormatType::VEC3});
 
     u32 buffer_size = static_cast<u32>(sizeof(Vertex) * triangle.size());
 
     BufferDescriptor buffer_descriptor;
     buffer_descriptor.size = buffer_size;
+    buffer_descriptor.data = triangle.data();
     triangle_mesh          = renderer->create_buffer(buffer_descriptor).id;
-
-    {
-        auto data = renderer->map_buffer(triangle_mesh, buffer_size);
-        memcpy(data, triangle.data(), buffer_size);
-        renderer->unmap_buffer(triangle_mesh);
-    }
 
     // TODO: Handle pipeline creation differently ...
     // Data should be given from engine, not hardcoded in renderer.

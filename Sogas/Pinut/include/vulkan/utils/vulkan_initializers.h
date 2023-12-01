@@ -24,6 +24,8 @@ VkSubmitInfo submit_info(VkCommandBuffer* cmd);
 
 VkPresentInfoKHR present_info();
 
+VkBufferCreateInfo buffer_info(const u32 size, VkBufferUsageFlags usage);
+
 } // namespace vkinit
 } // namespace vulkan
 } // namespace pinut

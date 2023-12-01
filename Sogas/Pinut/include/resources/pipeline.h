@@ -1,5 +1,6 @@
 #pragma once
 
+#include <resources/resources.h>
 #include <resources/shader_state.h>
 
 namespace pinut
@@ -62,17 +63,17 @@ struct ViewportDescriptor
 
 struct VertexAttribute
 {
-    u16 location = 0;
-    u16 binding  = 0;
-    u32 offset   = 0;
-    // TODO Add the component format. Float3/Vec3 at the moment.
+    u16                   location    = 0;
+    u16                   binding     = 0;
+    u32                   offset      = 0;
+    VertexInputFormatType format_type = VertexInputFormatType::FLOAT;
 };
 
 struct VertexStream
 {
-    u16 binding = 0;
-    u16 stride  = 0;
-    // TODO Add the vertex input rate [per vertex or per instance].
+    u16             binding    = 0;
+    u16             stride     = 0;
+    VertexInputRate input_rate = VertexInputRate::PER_VERTEX;
 };
 
 struct VertexInputDescriptor
@@ -117,6 +118,7 @@ struct PipelineDescriptor
     RasterizationDescriptor rasterization;
     VertexInputDescriptor   vertex_input;
     ViewportDescriptor      viewport;
+    TopologyType            topology = TopologyType::TRIANGLE;
 
     PipelineDescriptor& add_name(const char* new_name)
     {
@@ -144,6 +146,12 @@ struct PipelineDescriptor
     PipelineDescriptor& add_viewport(ViewportDescriptor& new_viewport)
     {
         viewport = new_viewport;
+        return *this;
+    }
+
+    PipelineDescriptor& set_topology(TopologyType new_topology)
+    {
+        topology = new_topology;
         return *this;
     }
 };

@@ -300,32 +300,62 @@ void VulkanDevice::resize(u32 width, u32 height)
 
 resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescriptor& descriptor)
 {
-    // TODO buffer info hardcoded at the moment.
+    // TODO Maybe create buffers and provide a way to copy them from the frontend.
+    // This way we can do a staging buffer, a gpu buffer and a copy command from the frontend.
+    // User may not want to have a staging buffer to move the data ...
+
+    ASSERT(descriptor.data != nullptr); // At the moment we are always uploading data.
 
     VulkanBuffer buffer;
+    create_vulkan_buffer(descriptor.size,
+                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | get_buffer_usage_flag(descriptor.type),
+                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                         &buffer);
 
-    VkBufferCreateInfo info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    info.usage              = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    info.size               = descriptor.size;
-    info.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &info, nullptr, &buffer.buffer))
+    if (descriptor.data)
     {
-        throw std::runtime_error("Failed to create buffer.");
+        VulkanBuffer staging_buffer;
+
+        create_vulkan_buffer(descriptor.size,
+                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &staging_buffer);
+
+        void* data;
+        vkMapMemory(device, staging_buffer.memory, 0, descriptor.size, 0, &data);
+        memcpy(data, descriptor.data, descriptor.size);
+        vkUnmapMemory(device, staging_buffer.memory);
+
+        VkCommandBufferAllocateInfo cmd_alloc_info =
+          vkinit::command_buffer_allocate_info(command_pool);
+
+        VkCommandBuffer copy_cmd;
+        VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &copy_cmd));
+
+        VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+        begin_info.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(copy_cmd, &begin_info);
+
+        VkBufferCopy region = {};
+        region.size         = descriptor.size;
+        vkCmdCopyBuffer(copy_cmd, staging_buffer.buffer, buffer.buffer, 1, &region);
+
+        vkEndCommandBuffer(copy_cmd);
+
+        VkSubmitInfo submit_info       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers    = &copy_cmd;
+
+        VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE));
+        vkQueueWaitIdle(graphics_queue);
+
+        vkFreeCommandBuffers(device, command_pool, 1, &copy_cmd);
+
+        vkDestroyBuffer(device, staging_buffer.buffer, nullptr);
+        vkFreeMemory(device, staging_buffer.memory, nullptr);
     }
-
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(device, buffer.buffer, &memory_requirements);
-
-    VkMemoryAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    allocate_info.allocationSize       = memory_requirements.size;
-    allocate_info.memoryTypeIndex =
-      find_memory_type(memory_requirements.memoryTypeBits,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    VK_CHECK(vkAllocateMemory(device, &allocate_info, nullptr, &buffer.memory));
-
-    vkBindBufferMemory(device, buffer.buffer, buffer.memory, 0);
 
     VulkanDevice::buffers.insert({++buffer_index, buffer});
 
@@ -807,6 +837,28 @@ void VulkanDevice::recreate_swapchain()
 
         VK_CHECK(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffers[i]));
     }
+}
+
+void VulkanDevice::create_vulkan_buffer(const u32             size,
+                                        VkBufferUsageFlags    usage_flags,
+                                        VkMemoryPropertyFlags memory_property_flags,
+                                        VulkanBuffer*         buffer)
+{
+    auto info = vkinit::buffer_info(size, usage_flags);
+
+    VK_CHECK(vkCreateBuffer(device, &info, nullptr, &buffer->buffer));
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device, buffer->buffer, &memory_requirements);
+
+    VkMemoryAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    allocate_info.allocationSize       = memory_requirements.size;
+    allocate_info.memoryTypeIndex =
+      find_memory_type(memory_requirements.memoryTypeBits, memory_property_flags);
+
+    VK_CHECK(vkAllocateMemory(device, &allocate_info, nullptr, &buffer->memory));
+
+    vkBindBufferMemory(device, buffer->buffer, buffer->memory, 0);
 }
 
 } // namespace vulkan

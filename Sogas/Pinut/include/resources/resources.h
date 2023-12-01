@@ -32,5 +32,35 @@ static const TextureHandle     invalid_texture{INVALID_ID};
 static const ShaderStateHandle invalid_shader_state{INVALID_ID};
 static const RenderPassHandle  invalid_render_pass{INVALID_ID};
 
+enum class VertexInputFormatType
+{
+    FLOAT,
+    INT,
+    UINT,
+    BOOL,
+    VEC2,
+    VEC3,
+    VEC4,
+    COUNT
+};
+
+enum class VertexInputRate
+{
+    PER_VERTEX,
+    PER_INSTANCE,
+    COUNT
+};
+
+enum class TopologyType
+{
+    POINT,
+    LINE,
+    LINE_STRIP,
+    TRIANGLE,
+    TRIANGLE_STRIP,
+    TRIANGLE_FAN,
+    COUNT
+};
+
 } // namespace resources
 } // namespace pinut

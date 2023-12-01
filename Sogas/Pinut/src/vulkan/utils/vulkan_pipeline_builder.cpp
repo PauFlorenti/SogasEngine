@@ -93,7 +93,7 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
 
     VkPipelineInputAssemblyStateCreateInfo assembly_info = {
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-    assembly_info.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    assembly_info.topology               = get_topology(descriptor->topology);
     assembly_info.primitiveRestartEnable = VK_FALSE;
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {
@@ -112,7 +112,8 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
               descriptor->vertex_input.attributes[i].location;
             vertex_input_attribute_description[i].offset =
               descriptor->vertex_input.attributes[i].offset;
-            vertex_input_attribute_description[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+            vertex_input_attribute_description[i].format =
+              get_vertex_input_format(descriptor->vertex_input.attributes[i].format_type);
         }
 
         vertex_input_info.vertexAttributeDescriptionCount =
@@ -131,9 +132,10 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
 
         for (u32 i = 0; i < descriptor->vertex_input.stream_count; i++)
         {
-            input_binding_description[0].binding   = descriptor->vertex_input.streams[i].binding;
-            input_binding_description[0].stride    = descriptor->vertex_input.streams[i].stride;
-            input_binding_description[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            input_binding_description[0].binding = descriptor->vertex_input.streams[i].binding;
+            input_binding_description[0].stride  = descriptor->vertex_input.streams[i].stride;
+            input_binding_description[0].inputRate =
+              get_vertex_input_rate(descriptor->vertex_input.streams[i].input_rate);
         }
 
         vertex_input_info.vertexBindingDescriptionCount = descriptor->vertex_input.stream_count;
