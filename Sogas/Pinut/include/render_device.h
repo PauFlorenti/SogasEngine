@@ -3,6 +3,7 @@
 #include <render_types.h>
 #include <resources/buffer.h>
 #include <resources/commandbuffer.h>
+#include <resources/pipeline.h>
 #include <resources/renderpass.h>
 #include <resources/resources.h>
 #include <resources/texture.h>
@@ -37,10 +38,16 @@ class GPUDevice
     virtual resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) = 0;
 
+    // TODO return handle for future reference outside backend.
+    virtual void create_pipeline(const resources::PipelineDescriptor& descriptor) = 0;
+
     virtual void begin_frame() = 0;
     virtual void end_frame()   = 0;
 
     virtual resources::CommandBuffer* get_command_buffer(bool begin) = 0;
+
+    virtual void* map_buffer(const u32 buffer_index, const u32 size) = 0;
+    virtual void  unmap_buffer(const u32 buffer_index)               = 0;
 
     virtual void destroy_buffer(resources::BufferHandle handle)   = 0;
     virtual void destroy_texture(resources::TextureHandle handle) = 0;

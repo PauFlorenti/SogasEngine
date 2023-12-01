@@ -10,11 +10,6 @@ namespace vulkan
 class VulkanRenderPass
 {
   public:
-    static void create_swapchain_renderpass(VkDevice                  device,
-                                            VkFormat                  format,
-                                            VkRect2D                  extent,
-                                            std::vector<VkImageView>& views);
-
     VkRenderPass handle;
 
     u16 width  = 0;

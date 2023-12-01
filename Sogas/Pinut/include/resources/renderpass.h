@@ -16,6 +16,8 @@ enum class RenderPassType
 struct RenderPassDescriptor
 {
     std::string name;
+
+    RenderPassType type = RenderPassType::GEOMETRY;
 };
 } // namespace resources
 } // namespace pinut

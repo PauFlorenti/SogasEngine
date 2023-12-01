@@ -6,6 +6,9 @@ namespace resources
 {
 struct BufferDescriptor
 {
+	u32 size = 0;
+
+	// TODO Add usage
 };
 
 class Buffer

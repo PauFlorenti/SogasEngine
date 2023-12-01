@@ -117,5 +117,28 @@ void VulkanCommandBuffer::draw_indexed(u32 first_index,
 {
     vkCmdDrawIndexed(cmd, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
+
+void VulkanCommandBuffer::bind_vertex_buffer(const u32 buffer_id,
+                                             const u32 binding,
+                                             const u32 offset)
+{
+    ASSERT(buffer_id != INVALID_ID);
+
+    auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
+    ASSERT(vulkan_device != nullptr);
+
+    auto it = vulkan_device->buffers.find(buffer_id);
+
+    if (it == vulkan_device->buffers.end())
+    {
+        return;
+    }
+
+    auto buffer = it->second;
+
+    VkDeviceSize vulkan_offset = {offset};
+
+    vkCmdBindVertexBuffers(cmd, binding, 1, &buffer.buffer, &vulkan_offset);
+}
 } // namespace vulkan
 } // namespace pinut

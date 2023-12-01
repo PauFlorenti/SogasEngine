@@ -13,9 +13,9 @@ namespace vulkan
 class VulkanPipeline
 {
   public:
-    static bool build_pipeline(VkDevice                       device,
-                               resources::PipelineDescriptor* descriptor,
-                               VkRenderPass                   render_pass);
+    static bool build_pipeline(VkDevice                             device,
+                               const resources::PipelineDescriptor* descriptor,
+                               VkRenderPass                         render_pass);
 
     VkPipeline          pipeline        = VK_NULL_HANDLE;
     VkPipelineLayout    pipeline_layout = VK_NULL_HANDLE;

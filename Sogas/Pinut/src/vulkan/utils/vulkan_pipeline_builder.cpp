@@ -30,9 +30,9 @@ namespace pinut
 {
 namespace vulkan
 {
-bool VulkanPipeline::build_pipeline(VkDevice                       device,
-                                    resources::PipelineDescriptor* descriptor,
-                                    VkRenderPass                   render_pass)
+bool VulkanPipeline::build_pipeline(VkDevice                             device,
+                                    const resources::PipelineDescriptor* descriptor,
+                                    VkRenderPass                         render_pass)
 {
     VulkanShaderState pipeline_shader_stages_info;
     if (VulkanDevice::shaders.contains(descriptor->shader_state.name))
@@ -98,6 +98,52 @@ bool VulkanPipeline::build_pipeline(VkDevice                       device,
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+
+    if (descriptor->vertex_input.attribute_count > 0)
+    {
+        VkVertexInputAttributeDescription vertex_input_attribute_description[4];
+        ASSERT(descriptor->vertex_input.attribute_count < 4);
+
+        for (u32 i = 0; i < descriptor->vertex_input.attribute_count; i++)
+        {
+            vertex_input_attribute_description[i].binding =
+              descriptor->vertex_input.attributes[i].binding;
+            vertex_input_attribute_description[i].location =
+              descriptor->vertex_input.attributes[i].location;
+            vertex_input_attribute_description[i].offset =
+              descriptor->vertex_input.attributes[i].offset;
+            vertex_input_attribute_description[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+        }
+
+        vertex_input_info.vertexAttributeDescriptionCount =
+          descriptor->vertex_input.attribute_count;
+        vertex_input_info.pVertexAttributeDescriptions = vertex_input_attribute_description;
+    }
+    else
+    {
+        vertex_input_info.vertexAttributeDescriptionCount = 0;
+        vertex_input_info.pVertexAttributeDescriptions    = nullptr;
+    }
+
+    if (descriptor->vertex_input.stream_count > 0)
+    {
+        VkVertexInputBindingDescription input_binding_description[4];
+
+        for (u32 i = 0; i < descriptor->vertex_input.stream_count; i++)
+        {
+            input_binding_description[0].binding   = descriptor->vertex_input.streams[i].binding;
+            input_binding_description[0].stride    = descriptor->vertex_input.streams[i].stride;
+            input_binding_description[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        }
+
+        vertex_input_info.vertexBindingDescriptionCount = descriptor->vertex_input.stream_count;
+        vertex_input_info.pVertexBindingDescriptions    = input_binding_description;
+    }
+    else
+    {
+        vertex_input_info.vertexBindingDescriptionCount = 0;
+        vertex_input_info.pVertexBindingDescriptions    = nullptr;
+    }
 
     VkPipelineMultisampleStateCreateInfo multisampling_info = {
       VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};

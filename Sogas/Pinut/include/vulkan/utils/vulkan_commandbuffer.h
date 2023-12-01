@@ -26,6 +26,8 @@ class VulkanCommandBuffer : public resources::CommandBuffer
                       u32 instance_count,
                       u32 vertex_offset) override;
 
+    void bind_vertex_buffer(const u32 buffer_id, const u32 binding, const u32 offset) override;
+
     VkCommandBuffer cmd = VK_NULL_HANDLE;
 
   private:

@@ -19,7 +19,7 @@ class RendererModule : public IModule
   protected:
     bool start() override;
     void stop() override;
-    void update(f32 /*delta_time*/) override;
+    void update(f32 /*delta_time*/) override {};
     void render() override;
     void render_ui() override{};
     void render_debug() override{};

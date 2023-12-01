@@ -13,6 +13,13 @@ namespace pinut
 {
 namespace vulkan
 {
+
+struct VulkanBuffer
+{
+    VkBuffer       buffer;
+    VkDeviceMemory memory;
+};
+
 class VulkanDevice : public GPUDevice
 {
   public:
@@ -29,10 +36,16 @@ class VulkanDevice : public GPUDevice
     resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) override;
 
+    // TODO should return a handle for future references outside.
+    void create_pipeline(const resources::PipelineDescriptor& descriptor) override;
+
     void begin_frame() override;
     void end_frame() override;
 
     resources::CommandBuffer* get_command_buffer(bool begin) override;
+
+    void* map_buffer(const u32 buffer_id, const u32 size) override;
+    void  unmap_buffer(const u32 buffer_id) override;
 
     void destroy_buffer(resources::BufferHandle handle) override;
     void destroy_texture(resources::TextureHandle handle) override;
@@ -40,6 +53,10 @@ class VulkanDevice : public GPUDevice
     static std::map<std::string, VulkanShaderState> shaders;
     static std::map<std::string, VulkanPipeline>    pipelines;
     static std::map<std::string, VulkanRenderPass>  render_passes;
+    static std::map<u32, VulkanBuffer>              buffers;
+
+    // TODO Do not use this values as buffer indexes.
+    u32 buffer_index = INVALID_ID;
 
     static const u32 MAX_SWAPCHAIN_IMAGES = 3;
 
@@ -52,6 +69,11 @@ class VulkanDevice : public GPUDevice
         return extent;
     }
 
+    std::string get_swapchain_pass() const
+    {
+        return "Swapchain_renderpass";
+    };
+
   private:
     bool                                 create_instance();
     void                                 setup_debug_messenger();
@@ -59,6 +81,8 @@ class VulkanDevice : public GPUDevice
     std::vector<VkDeviceQueueCreateInfo> get_queues();
     void                                 create_device();
     void                                 create_surface(void* window);
+
+    u32 find_memory_type(const u32 type_filter, const VkMemoryPropertyFlags property_flags);
 
     // Swapchain functions
     void create_swapchain();
@@ -75,6 +99,7 @@ class VulkanDevice : public GPUDevice
     VkSurfaceKHR     vulkan_surface  = VK_NULL_HANDLE;
 
     VkPhysicalDeviceProperties           physical_device_properties;
+    VkPhysicalDeviceMemoryProperties     physical_device_memory_properties;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 
     VkExtent2D extent{512, 512};

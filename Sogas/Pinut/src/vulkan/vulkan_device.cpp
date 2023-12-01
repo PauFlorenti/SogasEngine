@@ -144,6 +144,7 @@ static constexpr bool enable_validation_layers = false;
 std::map<std::string, VulkanShaderState> VulkanDevice::shaders;
 std::map<std::string, VulkanPipeline>    VulkanDevice::pipelines;
 std::map<std::string, VulkanRenderPass>  VulkanDevice::render_passes;
+std::map<u32, VulkanBuffer>              VulkanDevice::buffers;
 
 VulkanDevice::~VulkanDevice()
 {
@@ -159,6 +160,8 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     create_instance();
     create_surface(window_handle);
     create_device();
+
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &physical_device_memory_properties);
 
     create_swapchain();
 
@@ -223,7 +226,7 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
         VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &command_buffer[i].cmd));
     }
 
-    // Create semaphores and fence
+    // Create semaphores and fences
     for (i32 i = 0; i < MAX_SWAPCHAIN_IMAGES; ++i)
     {
         VkSemaphoreCreateInfo semaphore_info = vkinit::semaphore_create_info();
@@ -233,43 +236,6 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
         VkFenceCreateInfo fence_info = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
         VK_CHECK(vkCreateFence(device, &fence_info, nullptr, &render_fences[i]));
     }
-
-    resources::PipelineDescriptor pipeline_descriptor = {};
-
-    // Create shaders
-    std::vector<u32> vs_buffer, fs_buffer;
-
-    if (!VulkanShaderLoader::load_shader_module(
-          "../../Sogas/Engine/data/shaders/bin/triangle.vert.spv",
-          vs_buffer))
-    {
-        throw std::runtime_error("Failed to load vertex shader data.");
-    }
-
-    if (!VulkanShaderLoader::load_shader_module(
-          "../../Sogas/Engine/data/shaders/bin/triangle.frag.spv",
-          fs_buffer))
-    {
-        throw std::runtime_error("Failed to load fragment shader data.");
-    }
-
-    resources::ShaderStateDescriptor shader_state = {};
-    shader_state.add_name("triangle_shader")
-      .add_shader_stage({vs_buffer, resources::ShaderStageType::VERTEX})
-      .add_shader_stage({fs_buffer, resources::ShaderStageType::FRAGMENT});
-
-    resources::ViewportDescriptor viewport_state = {
-      {0, 0, static_cast<f32>(extent.width), static_cast<f32>(extent.height)},
-      {0, 0, extent.width, extent.height}};
-
-    pipeline_descriptor.add_name("triangle_pipeline")
-      .add_shader_state(shader_state)
-      .add_viewport(viewport_state);
-
-    // TODO: Handle pipeline creation differently ...
-    // Data should be given from engine, not hardcoded in renderer.
-
-    ASSERT(VulkanPipeline::build_pipeline(device, &pipeline_descriptor, render_pass) == true);
 }
 
 void VulkanDevice::shutdown()
@@ -279,26 +245,28 @@ void VulkanDevice::shutdown()
 
     // Clear shaders
     {
-        auto it = shaders.begin();
-        while (it != shaders.end())
+        for (auto& shader : shaders)
         {
-            for (auto& shader : it->second)
+            for (auto& module : shader.second)
             {
-                vkDestroyShaderModule(device, shader.module, nullptr);
+                vkDestroyShaderModule(device, module.module, nullptr);
             }
-
-            ++it;
         }
     }
 
     {
-        auto it = pipelines.begin();
-        while (it != pipelines.end())
+        for (auto& it : pipelines)
         {
-            vkDestroyPipeline(device, it->second.pipeline, nullptr);
-            vkDestroyPipelineLayout(device, it->second.pipeline_layout, nullptr);
+            vkDestroyPipeline(device, it.second.pipeline, nullptr);
+            vkDestroyPipelineLayout(device, it.second.pipeline_layout, nullptr);
+        }
+    }
 
-            ++it;
+    {
+        for (auto& it : buffers)
+        {
+            vkDestroyBuffer(device, it.second.buffer, nullptr);
+            vkFreeMemory(device, it.second.memory, nullptr);
         }
     }
 
@@ -330,10 +298,38 @@ void VulkanDevice::resize(u32 width, u32 height)
     }
 }
 
-resources::BufferHandle VulkanDevice::create_buffer(
-  const resources::BufferDescriptor& /*descriptor*/)
+resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescriptor& descriptor)
 {
-    return {};
+    // TODO buffer info hardcoded at the moment.
+
+    VulkanBuffer buffer;
+
+    VkBufferCreateInfo info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    info.usage              = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    info.size               = descriptor.size;
+    info.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &info, nullptr, &buffer.buffer))
+    {
+        throw std::runtime_error("Failed to create buffer.");
+    }
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device, buffer.buffer, &memory_requirements);
+
+    VkMemoryAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    allocate_info.allocationSize       = memory_requirements.size;
+    allocate_info.memoryTypeIndex =
+      find_memory_type(memory_requirements.memoryTypeBits,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VK_CHECK(vkAllocateMemory(device, &allocate_info, nullptr, &buffer.memory));
+
+    vkBindBufferMemory(device, buffer.buffer, buffer.memory, 0);
+
+    VulkanDevice::buffers.insert({++buffer_index, buffer});
+
+    return (resources::BufferHandle)(buffer_index);
 }
 
 resources::TextureHandle VulkanDevice::create_texture(
@@ -352,6 +348,11 @@ resources::RenderPassHandle VulkanDevice::create_renderpass(
 void VulkanDevice::begin_frame()
 {
     VK_CHECK(vkWaitForFences(device, 1, &render_fences[current_frame], VK_TRUE, UINT64_MAX));
+}
+
+void VulkanDevice::create_pipeline(const resources::PipelineDescriptor& descriptor)
+{
+    ASSERT(VulkanPipeline::build_pipeline(device, &descriptor, render_pass) == true);
 }
 
 void VulkanDevice::end_frame()
@@ -426,6 +427,42 @@ resources::CommandBuffer* VulkanDevice::get_command_buffer(bool begin)
     }
 
     return &command_buffer[current_frame];
+}
+
+void* VulkanDevice::map_buffer(const u32 buffer_id, u32 size)
+{
+    ASSERT(buffer_id != INVALID_ID);
+    ASSERT(size > 0);
+
+    auto it = buffers.find(buffer_id);
+
+    if (it == buffers.end())
+    {
+        return nullptr;
+    }
+
+    auto buffer = it->second;
+
+    void* data;
+    vkMapMemory(device, buffer.memory, 0, size, 0, &data);
+
+    return data;
+}
+
+void VulkanDevice::unmap_buffer(const u32 buffer_id)
+{
+    ASSERT(buffer_id != INVALID_ID);
+
+    auto it = buffers.find(buffer_id);
+
+    if (it == buffers.end())
+    {
+        return;
+    }
+
+    auto buffer = it->second;
+
+    vkUnmapMemory(device, buffer.memory);
 }
 
 void VulkanDevice::destroy_buffer(resources::BufferHandle /*handle*/)
@@ -675,6 +712,21 @@ void VulkanDevice::create_surface(void* window)
 #endif
 
     PDEBUG("Window surface created!");
+}
+
+u32 VulkanDevice::find_memory_type(const u32                   type_filter,
+                                   const VkMemoryPropertyFlags property_flags)
+{
+    for (u32 i = 0; i < physical_device_memory_properties.memoryTypeCount; i++)
+    {
+        if (type_filter & (1 << i) &&
+            (physical_device_memory_properties.memoryTypes[i].propertyFlags & property_flags))
+        {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("Failed to find suitable memory type!");
 }
 
 void VulkanDevice::create_swapchain()
