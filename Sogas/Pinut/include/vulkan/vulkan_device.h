@@ -49,6 +49,12 @@ class VulkanDevice : public GPUDevice
     void* map_buffer(const u32 buffer_id, const u32 size) override;
     void  unmap_buffer(const u32 buffer_id) override;
 
+    void copy_buffer(const u32 src_buffer_id,
+                     const u32 dst_buffer_id,
+                     const u32 size,
+                     const u32 src_offset = 0,
+                     const u32 dst_offset = 0) override;
+
     void destroy_buffer(resources::BufferHandle handle) override;
     void destroy_texture(resources::TextureHandle handle) override;
 

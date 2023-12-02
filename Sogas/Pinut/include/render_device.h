@@ -51,6 +51,12 @@ class GPUDevice
     virtual void* map_buffer(const u32 buffer_index, const u32 size) = 0;
     virtual void  unmap_buffer(const u32 buffer_index)               = 0;
 
+    virtual void copy_buffer(const u32 src_buffer_id,
+                             const u32 dst_buffer_id,
+                             const u32 size,
+                             const u32 src_offset = 0,
+                             const u32 dst_offset = 0) = 0;
+
     virtual void destroy_buffer(resources::BufferHandle handle)   = 0;
     virtual void destroy_texture(resources::TextureHandle handle) = 0;
 };

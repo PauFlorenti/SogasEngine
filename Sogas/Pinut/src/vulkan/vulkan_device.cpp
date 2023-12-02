@@ -3,6 +3,7 @@
 #include <vulkan/utils/vulkan_initializers.h>
 #include <vulkan/utils/vulkan_render_pass.h>
 #include <vulkan/utils/vulkan_swapchain_builder.h>
+#include <vulkan/utils/vulkan_utils.h>
 #include <vulkan/vulkan_debug.h>
 #include <vulkan/vulkan_device.h>
 
@@ -312,57 +313,47 @@ resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescr
     // This way we can do a staging buffer, a gpu buffer and a copy command from the frontend.
     // User may not want to have a staging buffer to move the data ...
 
-    ASSERT(descriptor.data != nullptr); // At the moment we are always uploading data.
+    VkBufferUsageFlags    usage_flags  = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+    VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
+
+    switch (descriptor.type)
+    {
+        case resources::BufferType::STAGING:
+            usage_flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            memory_flags =
+              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            break;
+        case resources::BufferType::VERTEX:
+            usage_flags  = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            break;
+        case resources::BufferType::INDEX:
+            usage_flags  = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            break;
+        case resources::BufferType::UNIFORM:
+            usage_flags  = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            break;
+        case resources::BufferType::STORAGE:
+            // TODO review storage usage flags.
+            usage_flags  = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            break;
+        default:
+            break;
+    }
 
     VulkanBuffer buffer;
-    create_vulkan_buffer(descriptor.size,
-                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | get_buffer_usage_flag(descriptor.type),
-                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                         &buffer);
+    create_vulkan_buffer(descriptor.size, usage_flags, memory_flags, &buffer);
 
     if (descriptor.data)
     {
-        VulkanBuffer staging_buffer;
-
-        create_vulkan_buffer(descriptor.size,
-                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &staging_buffer);
-
+        // TODO Descriptor should provide offset. Data may not be at position 0.
         void* data;
-        vkMapMemory(device, staging_buffer.memory, 0, descriptor.size, 0, &data);
+        vkMapMemory(device, buffer.memory, 0, descriptor.size, 0, &data);
         memcpy(data, descriptor.data, descriptor.size);
-        vkUnmapMemory(device, staging_buffer.memory);
-
-        VkCommandBufferAllocateInfo cmd_alloc_info =
-          vkinit::command_buffer_allocate_info(command_pool);
-
-        VkCommandBuffer copy_cmd;
-        VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &copy_cmd));
-
-        VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-        begin_info.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(copy_cmd, &begin_info);
-
-        VkBufferCopy region = {};
-        region.size         = descriptor.size;
-        vkCmdCopyBuffer(copy_cmd, staging_buffer.buffer, buffer.buffer, 1, &region);
-
-        vkEndCommandBuffer(copy_cmd);
-
-        VkSubmitInfo submit_info       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers    = &copy_cmd;
-
-        VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE));
-        vkQueueWaitIdle(graphics_queue);
-
-        vkFreeCommandBuffers(device, command_pool, 1, &copy_cmd);
-
-        vkDestroyBuffer(device, staging_buffer.buffer, nullptr);
-        vkFreeMemory(device, staging_buffer.memory, nullptr);
+        vkUnmapMemory(device, buffer.memory);
     }
 
     VulkanDevice::buffers.insert({++buffer_index, buffer});
@@ -538,8 +529,71 @@ void VulkanDevice::unmap_buffer(const u32 buffer_id)
     vkUnmapMemory(device, buffer.memory);
 }
 
-void VulkanDevice::destroy_buffer(resources::BufferHandle /*handle*/)
+void VulkanDevice::copy_buffer(const u32 src_buffer_id,
+                               const u32 dst_buffer_id,
+                               const u32 size,
+                               const u32 src_offset,
+                               const u32 dst_offset)
 {
+    ASSERT(src_buffer_id != INVALID_ID && dst_buffer_id != INVALID_ID);
+    ASSERT(src_buffer_id != dst_buffer_id);
+
+    // Get buffers
+    // TODO simplify this.
+
+    const auto src_buffer_iterator = buffers.find(src_buffer_id);
+    const auto dst_buffer_iterator = buffers.find(dst_buffer_id);
+    if (src_buffer_iterator == buffers.end() || dst_buffer_iterator == buffers.end())
+    {
+        // TODO #include Windows.h gets in conflict with PERROR(). Find a way to user own logger.
+        //PERROR("Trying to copy invalid buffers.");
+        return;
+    }
+
+    const auto src_buffer = src_buffer_iterator->second;
+    const auto dst_buffer = dst_buffer_iterator->second;
+
+    // Copy logic
+    VkCommandBufferAllocateInfo cmd_alloc_info = vkinit::command_buffer_allocate_info(command_pool);
+
+    VkCommandBuffer copy_cmd;
+    VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &copy_cmd));
+
+    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin_info.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(copy_cmd, &begin_info);
+
+    VkBufferCopy region = {};
+    region.size         = size;
+    region.dstOffset    = dst_offset;
+    region.srcOffset    = src_offset;
+    vkCmdCopyBuffer(copy_cmd, src_buffer.buffer, dst_buffer.buffer, 1, &region);
+
+    vkEndCommandBuffer(copy_cmd);
+
+    VkSubmitInfo submit_info       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers    = &copy_cmd;
+
+    VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE));
+    vkQueueWaitIdle(graphics_queue);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &copy_cmd);
+}
+
+void VulkanDevice::destroy_buffer(resources::BufferHandle handle)
+{
+    auto it = buffers.find(handle.id);
+
+    if (it == buffers.end())
+    {
+        //PERROR("Trying to destroy a non-existing buffer.");
+        return;
+    }
+
+    vkDestroyBuffer(device, it->second.buffer, nullptr);
+    vkFreeMemory(device, it->second.memory, nullptr);
 }
 
 void VulkanDevice::destroy_texture(resources::TextureHandle /*handle*/)

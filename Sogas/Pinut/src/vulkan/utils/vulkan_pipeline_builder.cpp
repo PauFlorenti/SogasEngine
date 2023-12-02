@@ -4,6 +4,7 @@
 #include <resources/shader_state.h>
 #include <vulkan/utils/vulkan_pipeline_builder.h>
 #include <vulkan/utils/vulkan_shader_loader.h>
+#include <vulkan/utils/vulkan_utils.h>
 #include <vulkan/vulkan_device.h>
 
 namespace

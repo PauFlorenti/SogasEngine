@@ -99,13 +99,30 @@ bool RendererModule::start()
 
     BufferDescriptor buffer_descriptor;
     buffer_descriptor.size = buffer_size;
-    buffer_descriptor.data = triangle.data();
     triangle_mesh          = renderer->create_buffer(buffer_descriptor).id;
 
-    buffer_descriptor.size = static_cast<u32>(sizeof(u32) * indices.size());
-    buffer_descriptor.data = indices.data();
-    buffer_descriptor.type = BufferType::INDEX;
-    triangle_index         = renderer->create_buffer(buffer_descriptor).id;
+    BufferDescriptor staging_buffer_descriptor;
+    staging_buffer_descriptor.size = buffer_size;
+    staging_buffer_descriptor.type = BufferType::STAGING;
+    staging_buffer_descriptor.data = triangle.data();
+    const auto staging_buffer      = renderer->create_buffer(staging_buffer_descriptor).id;
+
+    renderer->copy_buffer(staging_buffer, triangle_mesh, buffer_size);
+    renderer->destroy_buffer({staging_buffer});
+
+    const auto index_buffer_size = static_cast<u32>(sizeof(u32) * indices.size());
+    buffer_descriptor.size       = index_buffer_size;
+    buffer_descriptor.type       = BufferType::INDEX;
+    triangle_index               = renderer->create_buffer(buffer_descriptor).id;
+
+    BufferDescriptor index_staging_buffer_descriptor;
+    index_staging_buffer_descriptor.data = indices.data();
+    index_staging_buffer_descriptor.size = index_buffer_size;
+    index_staging_buffer_descriptor.type = BufferType::STAGING;
+    const auto index_staging_buffer = renderer->create_buffer(index_staging_buffer_descriptor).id;
+
+    renderer->copy_buffer(index_staging_buffer, triangle_index, index_buffer_size);
+    renderer->destroy_buffer({index_staging_buffer});
 
     DescriptorSetBindingDescriptor binding = {0,
                                               1,
@@ -115,7 +132,8 @@ bool RendererModule::start()
     DescriptorSetLayoutDescriptor descriptor_set_layout_descriptor = {};
     descriptor_set_layout_descriptor.add_binding(&binding).add_name("GLOBAL");
 
-    pipeline_descriptor.add_descriptor_set_layout(renderer->create_descriptor(descriptor_set_layout_descriptor));
+    pipeline_descriptor.add_descriptor_set_layout(
+      renderer->create_descriptor(descriptor_set_layout_descriptor));
 
     // TODO: Handle pipeline creation differently ...
     // Data should be given from engine, not hardcoded in renderer.
