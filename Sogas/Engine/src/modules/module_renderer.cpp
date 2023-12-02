@@ -45,9 +45,13 @@ struct Vertex
 
 std::vector<Vertex> triangle = {{vec3(0.5f, 0.5f, 0.0f), vec3(1.0f, 0.0f, 0.0f)},
                                 {vec3(-0.5f, 0.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f)},
-                                {vec3(0.0f, -0.5f, 0.0f), vec3(0.0f, 0.0f, 1.0f)}};
+                                {vec3(-0.5f, -0.5f, 0.0f), vec3(0.0f, 0.0f, 1.0f)},
+                                {vec3(0.5f, -0.5f, 0.0f), vec3(0.0f, 0.5f, 0.7f)}};
+
+std::vector<u16> indices = {0, 1, 2, 0, 2, 3};
 
 u32 triangle_mesh;
+u32 triangle_index;
 
 bool RendererModule::start()
 {
@@ -98,6 +102,11 @@ bool RendererModule::start()
     buffer_descriptor.data = triangle.data();
     triangle_mesh          = renderer->create_buffer(buffer_descriptor).id;
 
+    buffer_descriptor.size = static_cast<u32>(sizeof(u32) * indices.size());
+    buffer_descriptor.data = indices.data();
+    buffer_descriptor.type = BufferType::INDEX;
+    triangle_index         = renderer->create_buffer(buffer_descriptor).id;
+
     // TODO: Handle pipeline creation differently ...
     // Data should be given from engine, not hardcoded in renderer.
 
@@ -124,7 +133,10 @@ void RendererModule::render()
     cmd->set_viewport(nullptr);
 
     cmd->bind_vertex_buffer(triangle_mesh, 0, 0);
-    cmd->draw(0, 3, 0, 1);
+    cmd->bind_index_buffer(triangle_index);
+
+    cmd->draw_indexed(0, static_cast<u32>(indices.size()), 0, 1, 0);
+    //cmd->draw(0, 3, 0, 1);
 
     renderer->end_frame();
 }

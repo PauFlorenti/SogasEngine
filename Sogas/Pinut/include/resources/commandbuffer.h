@@ -29,6 +29,7 @@ class CommandBuffer
                               u32 vertex_offset) = 0;
 
     virtual void bind_vertex_buffer(const u32 buffer_id, const u32 binding, const u32 offset) = 0;
+    virtual void bind_index_buffer(const u32 buffeR_ide)                                      = 0;
 
     GPUDevice* device = nullptr;
 };
