@@ -35,6 +35,8 @@ class VulkanDevice : public GPUDevice
       const resources::TextureDescriptor& descriptor) override;
     resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) override;
+    const u32 create_descriptor(
+      const resources::DescriptorSetLayoutDescriptor& descriptor) override;
 
     // TODO should return a handle for future references outside.
     void create_pipeline(const resources::PipelineDescriptor& descriptor) override;
@@ -54,6 +56,7 @@ class VulkanDevice : public GPUDevice
     static std::map<std::string, VulkanPipeline>    pipelines;
     static std::map<std::string, VulkanRenderPass>  render_passes;
     static std::map<u32, VulkanBuffer>              buffers;
+    static std::map<u32, VkDescriptorSetLayout>     descriptor_sets;
 
     // TODO Do not use this values as buffer indexes.
     u32 buffer_index = INVALID_ID;

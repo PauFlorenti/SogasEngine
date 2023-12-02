@@ -21,5 +21,9 @@ VkVertexInputRate get_vertex_input_rate(resources::VertexInputRate input_rate);
 VkPrimitiveTopology get_topology(resources::TopologyType topology);
 
 VkBufferUsageFlags get_buffer_usage_flag(resources::BufferType buffer_type);
+
+VkDescriptorType get_descriptor_type(resources::DescriptorType descriptor_type);
+
+VkShaderStageFlags get_shader_stage_flag(resources::ShaderStageType shader_stage);
 } // namespace vulkan
 } // namespace pinut

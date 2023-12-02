@@ -61,6 +61,5 @@ enum class TopologyType
     TRIANGLE_FAN,
     COUNT
 };
-
 } // namespace resources
 } // namespace pinut

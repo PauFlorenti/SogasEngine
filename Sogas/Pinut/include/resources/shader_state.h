@@ -51,5 +51,46 @@ struct ShaderStateDescriptor
         return *this;
     }
 };
+
+enum class DescriptorType
+{
+    SAMPLER,
+    COMBINED_IMAGE_SAMPLER,
+    SAMPLED_IMAGE,
+    STORAGE_IMAGE,
+    UNIFORM,
+    STORAGE,
+    UNIFORM_DYNAMIC,
+    STORAGE_DYNAMIC,
+    INPUT_ATTACHMENT,
+    COUNT
+};
+
+struct DescriptorSetBindingDescriptor
+{
+    u32             binding         = 0;
+    u32             count           = 0;
+    ShaderStageType shader_stage    = ShaderStageType::MAX_SHADER_TYPE;
+    DescriptorType  descriptor_type = DescriptorType::COUNT;
+};
+
+struct DescriptorSetLayoutDescriptor
+{
+    u32                            binding_count = 0;
+    DescriptorSetBindingDescriptor bindings[16];
+    const char*                    name;
+
+    DescriptorSetLayoutDescriptor& add_name(const char* new_name)
+    {
+        name = new_name;
+        return *this;
+    }
+
+    DescriptorSetLayoutDescriptor& add_binding(const DescriptorSetBindingDescriptor* new_binding)
+    {
+        bindings[binding_count++] = *new_binding;
+        return *this;
+    }
+};
 } // namespace resources
 } // namespace pinut

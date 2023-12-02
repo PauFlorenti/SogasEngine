@@ -158,5 +158,65 @@ VkBufferUsageFlags get_buffer_usage_flag(resources::BufferType buffer_type)
             break;
     }
 }
+VkDescriptorType get_descriptor_type(resources::DescriptorType descriptor_type)
+{
+    switch (descriptor_type)
+    {
+        case pinut::resources::DescriptorType::SAMPLER:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+            break;
+        case pinut::resources::DescriptorType::COMBINED_IMAGE_SAMPLER:
+            return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            break;
+        case pinut::resources::DescriptorType::SAMPLED_IMAGE:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            break;
+        case pinut::resources::DescriptorType::STORAGE_IMAGE:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            break;
+        default:
+        case pinut::resources::DescriptorType::UNIFORM:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            break;
+        case pinut::resources::DescriptorType::STORAGE:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            break;
+        case pinut::resources::DescriptorType::UNIFORM_DYNAMIC:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+            break;
+        case pinut::resources::DescriptorType::STORAGE_DYNAMIC:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+            break;
+        case pinut::resources::DescriptorType::INPUT_ATTACHMENT:
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+            break;
+        case pinut::resources::DescriptorType::COUNT:
+            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+            break;
+    }
+}
+VkShaderStageFlags get_shader_stage_flag(resources::ShaderStageType shader_stage)
+{
+    switch (shader_stage)
+    {
+        case pinut::resources::ShaderStageType::VERTEX:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+            break;
+        case pinut::resources::ShaderStageType::GEOMETRY:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+            break;
+        case pinut::resources::ShaderStageType::FRAGMENT:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+            break;
+        case pinut::resources::ShaderStageType::COMPUTE:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+            break;
+        default:
+        case pinut::resources::ShaderStageType::MAX_SHADER_TYPE:
+            PWARN("Undefined shader stage provided. Binding to all shader stages.");
+            return VK_SHADER_STAGE_ALL;
+            break;
+    }
+}
 } // namespace vulkan
 } // namespace pinut

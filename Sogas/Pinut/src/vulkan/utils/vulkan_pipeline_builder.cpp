@@ -198,8 +198,26 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
 
     VulkanPipeline pipeline;
 
+    std::vector<VkDescriptorSetLayout> descriptor_set_layouts(
+      descriptor->descriptor_sets_ids.size());
+
+    for (u32 i = 0; i < descriptor->descriptor_sets_ids.size(); ++i)
+    {
+        const auto it = VulkanDevice::descriptor_sets.find(descriptor->descriptor_sets_ids.at(i));
+
+        if (it == VulkanDevice::descriptor_sets.end())
+        {
+            throw std::runtime_error("Error accessing non existant descriptor set.");
+        }
+
+        descriptor_set_layouts.at(i) = it->second;
+    }
+
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+    pipeline_layout_info.setLayoutCount = static_cast<u32>(descriptor_set_layouts.size());
+    pipeline_layout_info.pSetLayouts    = descriptor_set_layouts.data();
+
     VK_CHECK(
       vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline.pipeline_layout));
 

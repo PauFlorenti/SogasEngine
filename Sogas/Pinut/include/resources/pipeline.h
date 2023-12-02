@@ -119,6 +119,7 @@ struct PipelineDescriptor
     VertexInputDescriptor   vertex_input;
     ViewportDescriptor      viewport;
     TopologyType            topology = TopologyType::TRIANGLE;
+    std::vector<u32>        descriptor_sets_ids;
 
     PipelineDescriptor& add_name(const char* new_name)
     {
@@ -152,6 +153,12 @@ struct PipelineDescriptor
     PipelineDescriptor& set_topology(TopologyType new_topology)
     {
         topology = new_topology;
+        return *this;
+    }
+
+    PipelineDescriptor& add_descriptor_set_layout(const u32 new_descriptor_set_layout)
+    {
+        descriptor_sets_ids.push_back(new_descriptor_set_layout);
         return *this;
     }
 };

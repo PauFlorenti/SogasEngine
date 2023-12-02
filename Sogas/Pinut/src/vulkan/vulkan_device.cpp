@@ -145,6 +145,7 @@ std::map<std::string, VulkanShaderState> VulkanDevice::shaders;
 std::map<std::string, VulkanPipeline>    VulkanDevice::pipelines;
 std::map<std::string, VulkanRenderPass>  VulkanDevice::render_passes;
 std::map<u32, VulkanBuffer>              VulkanDevice::buffers;
+std::map<u32, VkDescriptorSetLayout>     VulkanDevice::descriptor_sets;
 
 VulkanDevice::~VulkanDevice()
 {
@@ -251,6 +252,13 @@ void VulkanDevice::shutdown()
             {
                 vkDestroyShaderModule(device, module.module, nullptr);
             }
+        }
+    }
+
+    {
+        for (auto& descriptor : descriptor_sets)
+        {
+            vkDestroyDescriptorSetLayout(device, descriptor.second, nullptr);
         }
     }
 
@@ -373,6 +381,41 @@ resources::RenderPassHandle VulkanDevice::create_renderpass(
 )
 {
     return {};
+}
+
+const u32 VulkanDevice::create_descriptor(
+  const resources::DescriptorSetLayoutDescriptor& descriptor)
+{
+    ASSERT(descriptor.binding_count > 0);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(descriptor.binding_count);
+    for (u32 i = 0; i < descriptor.binding_count; ++i)
+    {
+        auto                         in_binding = descriptor.bindings[i];
+        VkDescriptorSetLayoutBinding binding    = {};
+        binding.binding                         = in_binding.binding;
+        binding.descriptorCount                 = in_binding.count;
+        binding.descriptorType                  = get_descriptor_type(in_binding.descriptor_type);
+        binding.stageFlags                      = get_shader_stage_flag(in_binding.shader_stage);
+
+        bindings.at(i) = binding;
+    }
+
+    VkDescriptorSetLayoutCreateInfo descriptor_set_layout_info = {
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+    descriptor_set_layout_info.bindingCount = static_cast<u32>(bindings.size());
+    descriptor_set_layout_info.pBindings    = bindings.data();
+
+    VkDescriptorSetLayout descriptor_set_layout;
+    VK_CHECK(vkCreateDescriptorSetLayout(device,
+                                         &descriptor_set_layout_info,
+                                         nullptr,
+                                         &descriptor_set_layout));
+
+    const auto index = static_cast<u32>(descriptor_sets.size());
+    descriptor_sets.insert({index, descriptor_set_layout});
+
+    return static_cast<u32>(descriptor_sets.size() - 1);
 }
 
 void VulkanDevice::begin_frame()

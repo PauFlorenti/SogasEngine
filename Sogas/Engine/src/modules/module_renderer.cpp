@@ -107,6 +107,16 @@ bool RendererModule::start()
     buffer_descriptor.type = BufferType::INDEX;
     triangle_index         = renderer->create_buffer(buffer_descriptor).id;
 
+    DescriptorSetBindingDescriptor binding = {0,
+                                              1,
+                                              ShaderStageType::VERTEX,
+                                              DescriptorType::UNIFORM};
+
+    DescriptorSetLayoutDescriptor descriptor_set_layout_descriptor = {};
+    descriptor_set_layout_descriptor.add_binding(&binding).add_name("GLOBAL");
+
+    pipeline_descriptor.add_descriptor_set_layout(renderer->create_descriptor(descriptor_set_layout_descriptor));
+
     // TODO: Handle pipeline creation differently ...
     // Data should be given from engine, not hardcoded in renderer.
 
