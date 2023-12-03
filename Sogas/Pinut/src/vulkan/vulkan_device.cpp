@@ -146,7 +146,8 @@ std::map<std::string, VulkanShaderState> VulkanDevice::shaders;
 std::map<std::string, VulkanPipeline>    VulkanDevice::pipelines;
 std::map<std::string, VulkanRenderPass>  VulkanDevice::render_passes;
 std::map<u32, VulkanBuffer>              VulkanDevice::buffers;
-std::map<u32, VkDescriptorSetLayout>     VulkanDevice::descriptor_sets;
+std::map<u32, VkDescriptorSetLayout>     VulkanDevice::descriptor_set_layouts;
+std::map<u32, VkDescriptorSet>           VulkanDevice::descriptor_sets;
 
 VulkanDevice::~VulkanDevice()
 {
@@ -238,6 +239,20 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
         VkFenceCreateInfo fence_info = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
         VK_CHECK(vkCreateFence(device, &fence_info, nullptr, &render_fences[i]));
     }
+
+    // Create Descriptor pool
+
+    VkDescriptorPoolSize pool_size = {};
+    pool_size.type                 = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount      = MAX_SWAPCHAIN_IMAGES;
+
+    VkDescriptorPoolCreateInfo pool_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    pool_info.poolSizeCount              = 1;
+    pool_info.pPoolSizes                 = &pool_size;
+    pool_info.maxSets                    = static_cast<u32>(MAX_SWAPCHAIN_IMAGES);
+    pool_info.flags                      = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+    VK_CHECK(vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool));
 }
 
 void VulkanDevice::shutdown()
@@ -245,42 +260,38 @@ void VulkanDevice::shutdown()
     VK_CHECK(vkWaitForFences(device, MAX_SWAPCHAIN_IMAGES, render_fences, VK_TRUE, UINT64_MAX));
     VK_CHECK(vkDeviceWaitIdle(device));
 
+    for (auto& descriptor_set : descriptor_sets)
+    {
+        vkFreeDescriptorSets(device, descriptor_pool, 1, &descriptor_set.second);
+    }
+
+    vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+
     // Clear shaders
+    for (auto& shader : shaders)
     {
-        for (auto& shader : shaders)
+        for (auto& module : shader.second)
         {
-            for (auto& module : shader.second)
-            {
-                vkDestroyShaderModule(device, module.module, nullptr);
-            }
+            vkDestroyShaderModule(device, module.module, nullptr);
         }
     }
 
+    for (auto& descriptor : descriptor_set_layouts)
     {
-        for (auto& descriptor : descriptor_sets)
-        {
-            vkDestroyDescriptorSetLayout(device, descriptor.second, nullptr);
-        }
+        vkDestroyDescriptorSetLayout(device, descriptor.second, nullptr);
     }
 
+    for (auto& it : pipelines)
     {
-        for (auto& it : pipelines)
-        {
-            vkDestroyPipeline(device, it.second.pipeline, nullptr);
-            vkDestroyPipelineLayout(device, it.second.pipeline_layout, nullptr);
-        }
+        vkDestroyPipeline(device, it.second.pipeline, nullptr);
+        vkDestroyPipelineLayout(device, it.second.pipeline_layout, nullptr);
     }
 
+    for (auto& it : buffers)
     {
-        for (auto& it : buffers)
-        {
-            vkDestroyBuffer(device, it.second.buffer, nullptr);
-            vkFreeMemory(device, it.second.memory, nullptr);
-        }
+        vkDestroyBuffer(device, it.second.buffer, nullptr);
+        vkFreeMemory(device, it.second.memory, nullptr);
     }
-
-    vkDestroyShaderModule(device, vertex_shader_module, nullptr);
-    vkDestroyShaderModule(device, fragment_shader_module, nullptr);
 
     for (u32 i = 0; i < MAX_SWAPCHAIN_IMAGES; ++i)
     {
@@ -309,10 +320,6 @@ void VulkanDevice::resize(u32 width, u32 height)
 
 resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescriptor& descriptor)
 {
-    // TODO Maybe create buffers and provide a way to copy them from the frontend.
-    // This way we can do a staging buffer, a gpu buffer and a copy command from the frontend.
-    // User may not want to have a staging buffer to move the data ...
-
     VkBufferUsageFlags    usage_flags  = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
     VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
 
@@ -332,8 +339,9 @@ resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescr
             memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
             break;
         case resources::BufferType::UNIFORM:
-            usage_flags  = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            usage_flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            memory_flags =
+              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             break;
         case resources::BufferType::STORAGE:
             // TODO review storage usage flags.
@@ -374,7 +382,7 @@ resources::RenderPassHandle VulkanDevice::create_renderpass(
     return {};
 }
 
-const u32 VulkanDevice::create_descriptor(
+const u32 VulkanDevice::create_descriptor_set_layout(
   const resources::DescriptorSetLayoutDescriptor& descriptor)
 {
     ASSERT(descriptor.binding_count > 0);
@@ -403,12 +411,57 @@ const u32 VulkanDevice::create_descriptor(
                                          nullptr,
                                          &descriptor_set_layout));
 
-    const auto index = static_cast<u32>(descriptor_sets.size());
-    descriptor_sets.insert({index, descriptor_set_layout});
+    const auto index = static_cast<u32>(descriptor_set_layouts.size());
+    descriptor_set_layouts.insert({index, descriptor_set_layout});
 
-    return static_cast<u32>(descriptor_sets.size() - 1);
+    return static_cast<u32>(index);
 }
 
+const u32 VulkanDevice::create_descriptor_set(const resources::DescriptorSetDescriptor& descriptor)
+{
+    auto iterator = descriptor_set_layouts.find(descriptor.layout_id);
+    if (iterator == descriptor_set_layouts.end())
+    {
+        PFATAL("Failed to find a valid descriptor set layout.");
+    }
+
+    auto layout = iterator->second;
+
+    VkDescriptorSetAllocateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    info.descriptorPool              = descriptor_pool;
+    info.descriptorSetCount          = 1;
+    info.pSetLayouts                 = &layout;
+
+    VkDescriptorSet descriptor_set;
+    VK_CHECK(vkAllocateDescriptorSets(device, &info, &descriptor_set));
+
+    auto buffer_it = buffers.find(descriptor.buffer_index);
+    if (buffer_it == buffers.end())
+    {
+        PFATAL("Invalid buffer passes for descriptor set.");
+        return INVALID_ID;
+    }
+
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer                 = buffer_it->second.buffer;
+    buffer_info.range                  = VK_WHOLE_SIZE;
+    buffer_info.offset                 = 0;
+
+    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    write.descriptorCount      = 1;
+    write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.dstBinding           = descriptor.binding;
+    write.pBufferInfo          = &buffer_info;
+    write.dstSet               = descriptor_set;
+
+    vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+
+    const auto index = static_cast<u32>(descriptor_sets.size());
+
+    descriptor_sets.insert({index, descriptor_set});
+
+    return index;
+}
 void VulkanDevice::begin_frame()
 {
     VK_CHECK(vkWaitForFences(device, 1, &render_fences[current_frame], VK_TRUE, UINT64_MAX));
@@ -594,6 +647,8 @@ void VulkanDevice::destroy_buffer(resources::BufferHandle handle)
 
     vkDestroyBuffer(device, it->second.buffer, nullptr);
     vkFreeMemory(device, it->second.memory, nullptr);
+
+    buffers.erase(it);
 }
 
 void VulkanDevice::destroy_texture(resources::TextureHandle /*handle*/)

@@ -92,5 +92,46 @@ struct DescriptorSetLayoutDescriptor
         return *this;
     }
 };
+
+struct DescriptorSetDescriptor
+{
+    // TODO At the moment only one buffer. Multiple resources per set in the future.
+    u32 buffer_index = INVALID_ID;
+    u32 binding      = INVALID_ID;
+
+    u32 layout_id = INVALID_ID;
+
+    std::string name;
+
+    DescriptorSetDescriptor& reset()
+    {
+        buffer_index = INVALID_ID;
+        binding      = INVALID_ID;
+        name         = "";
+        return *this;
+    }
+
+    DescriptorSetDescriptor& set_layout(const u32 new_layout_id)
+    {
+        ASSERT(new_layout_id != INVALID_ID);
+        layout_id = new_layout_id;
+        return *this;
+    }
+
+    DescriptorSetDescriptor& add_buffer(const BufferHandle& buffer, const u16 new_binding)
+    {
+        ASSERT(buffer.id != INVALID_ID);
+
+        buffer_index = buffer.id;
+        binding      = static_cast<u32>(new_binding);
+        return *this;
+    }
+
+    DescriptorSetDescriptor& set_name(const char* new_name)
+    {
+        name = new_name;
+        return *this;
+    }
+};
 } // namespace resources
 } // namespace pinut

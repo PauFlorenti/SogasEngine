@@ -204,9 +204,9 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
 
     for (u32 i = 0; i < descriptor->descriptor_sets_ids.size(); ++i)
     {
-        const auto it = VulkanDevice::descriptor_sets.find(descriptor->descriptor_sets_ids.at(i));
+        const auto it = VulkanDevice::descriptor_set_layouts.find(descriptor->descriptor_sets_ids.at(i));
 
-        if (it == VulkanDevice::descriptor_sets.end())
+        if (it == VulkanDevice::descriptor_set_layouts.end())
         {
             throw std::runtime_error("Error accessing non existant descriptor set.");
         }

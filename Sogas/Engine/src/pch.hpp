@@ -29,6 +29,8 @@
 #endif
 
 // Third party includes
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
 #include <nlohmann/json.hpp>
 
 // own external includes.

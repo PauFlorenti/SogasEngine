@@ -37,8 +37,10 @@ class GPUDevice
       const resources::TextureDescriptor& descriptor) = 0;
     virtual resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) = 0;
-    virtual const u32 create_descriptor(
+    virtual const u32 create_descriptor_set_layout(
       const resources::DescriptorSetLayoutDescriptor& descriptor) = 0;
+    virtual const u32 create_descriptor_set(
+      const resources::DescriptorSetDescriptor& descriptor) = 0;
 
     // TODO return handle for future reference outside backend.
     virtual void create_pipeline(const resources::PipelineDescriptor& descriptor) = 0;

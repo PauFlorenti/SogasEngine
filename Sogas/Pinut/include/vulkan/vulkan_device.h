@@ -35,8 +35,9 @@ class VulkanDevice : public GPUDevice
       const resources::TextureDescriptor& descriptor) override;
     resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) override;
-    const u32 create_descriptor(
+    const u32 create_descriptor_set_layout(
       const resources::DescriptorSetLayoutDescriptor& descriptor) override;
+    const u32 create_descriptor_set(const resources::DescriptorSetDescriptor& descriptor) override;
 
     // TODO should return a handle for future references outside.
     void create_pipeline(const resources::PipelineDescriptor& descriptor) override;
@@ -62,7 +63,8 @@ class VulkanDevice : public GPUDevice
     static std::map<std::string, VulkanPipeline>    pipelines;
     static std::map<std::string, VulkanRenderPass>  render_passes;
     static std::map<u32, VulkanBuffer>              buffers;
-    static std::map<u32, VkDescriptorSetLayout>     descriptor_sets;
+    static std::map<u32, VkDescriptorSetLayout>     descriptor_set_layouts;
+    static std::map<u32, VkDescriptorSet>           descriptor_sets;
 
     // TODO Do not use this values as buffer indexes.
     u32 buffer_index = INVALID_ID;
@@ -138,6 +140,8 @@ class VulkanDevice : public GPUDevice
 
     VulkanCommandBuffer command_buffer[MAX_SWAPCHAIN_IMAGES];
 
+    VkDescriptorPool descriptor_pool;
+
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 #endif
@@ -149,9 +153,6 @@ class VulkanDevice : public GPUDevice
 
     // Default triangle drawing. Probably gonna be removed from here.
     //! Temporal
-    VkShaderModule vertex_shader_module   = VK_NULL_HANDLE;
-    VkShaderModule fragment_shader_module = VK_NULL_HANDLE;
-
     VkCommandPool   command_pool;
     VkCommandBuffer cmd;
 

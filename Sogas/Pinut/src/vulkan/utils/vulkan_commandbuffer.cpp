@@ -45,6 +45,8 @@ void VulkanCommandBuffer::bind_pipeline(std::string pipeline_name)
 
     auto pipeline = VulkanDevice::pipelines.at(pipeline_name);
 
+    current_pipeline_layout = pipeline.pipeline_layout;
+
     vkCmdBindPipeline(cmd, pipeline.bind_point, pipeline.pipeline);
 }
 
@@ -116,6 +118,26 @@ void VulkanCommandBuffer::draw_indexed(u32 first_index,
                                        u32 vertex_offset)
 {
     vkCmdDrawIndexed(cmd, index_count, instance_count, first_index, vertex_offset, first_instance);
+}
+
+void VulkanCommandBuffer::bind_descriptor_set(const u32 descriptor_set_id)
+{
+    const auto iterator = VulkanDevice::descriptor_sets.find(descriptor_set_id);
+
+    if (iterator == VulkanDevice::descriptor_sets.end())
+    {
+        PFATAL("Failed to find descriptor set to be bound.");
+        return;
+    }
+
+    vkCmdBindDescriptorSets(cmd,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            current_pipeline_layout,
+                            0,
+                            1,
+                            &iterator->second,
+                            0,
+                            nullptr);
 }
 
 void VulkanCommandBuffer::bind_vertex_buffer(const u32 buffer_id,
