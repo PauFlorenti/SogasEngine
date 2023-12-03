@@ -1,8 +1,10 @@
-#include <fstream>
+#include "pch.hpp"
+
 #include <modules/module_renderer.h>
 #include <resources/pipeline.h>
 #include <resources/shader_state.h>
 
+// TODO remove. Renderer should not calculate dt.
 #include <chrono>
 
 namespace sogas

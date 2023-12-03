@@ -1,7 +1,7 @@
 
 #include "pch.hpp"
 
-#include <engine/Engine.h>
+#include <engine/engine.h>
 #include <modules/module_entities.h>
 #include <modules/module_input.h>
 #include <modules/module_renderer.h>

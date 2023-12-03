@@ -5,6 +5,7 @@
 // C++ includes
 #include <array>
 #include <cassert>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <stdint.h>
@@ -38,6 +39,7 @@
 
 // engine includes
 #include <engine/defines.h>
+#include <engine/smemory.h>
 #include <platform/platform.h>
 
 #endif //PCH_HPP
