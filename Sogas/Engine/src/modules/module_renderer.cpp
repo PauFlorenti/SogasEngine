@@ -36,6 +36,7 @@ struct Vertex
 {
     glm::vec3 position;
     glm::vec3 color;
+    //glm::vec3 normal;
 };
 
 struct UniformBuffer
@@ -45,12 +46,75 @@ struct UniformBuffer
     glm::mat4 proj;
 };
 
-std::vector<Vertex> triangle = {{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-                                {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-                                {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
-                                {glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f)}};
+std::vector<Vertex> plane = {{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+                             {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+                             {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
+                             {glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f)}};
 
-std::vector<u16> indices = {0, 1, 2, 0, 2, 3};
+// clang-format off
+std::vector<Vertex> cube = {
+    //Top
+    {glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //0
+    {glm::vec3( 0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //1
+    {glm::vec3(-0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //2
+    {glm::vec3( 0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //3
+
+    //Bottom
+    {glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //4
+    {glm::vec3( 0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //5
+    {glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //6
+    {glm::vec3( 0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //7
+
+    //Front
+    {glm::vec3(-0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //8
+    {glm::vec3( 0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //9
+    {glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //10
+    {glm::vec3( 0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //11
+
+    //Back
+    {glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //12
+    {glm::vec3( 0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //13
+    {glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //14
+    {glm::vec3( 0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //15
+
+    //Left
+    {glm::vec3(-0.5f,  0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //16
+    {glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //17
+    {glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //18
+    {glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //19
+
+    //Right
+    {glm::vec3(0.5f,  0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}, //20
+    {glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}, //21
+    {glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}, //22
+    {glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}  //23
+};
+
+std::vector<u16> indices = { 
+    //Top
+    0, 1, 2,
+    2, 3, 1,
+
+    //Bottom
+    4, 5, 6,
+    6, 7, 5,
+
+    //Front
+    8, 9, 10,
+    10, 11, 9,
+
+    //Back
+    12, 13, 14,
+    14, 15, 13,
+
+    //Left
+    16, 17, 18,
+    18, 19, 17,
+
+    //Right
+    20, 21, 22,
+    22, 23, 21 };
+// clang-format on
 
 u32 triangle_mesh;
 u32 triangle_index;
@@ -88,11 +152,16 @@ bool RendererModule::start()
     ViewportDescriptor viewport_state = {{0, 0, static_cast<f32>(1280), static_cast<f32>(720)},
                                          {0, 0, 1280, 720}};
 
+    RasterizationDescriptor raster = {};
+    raster.cull_mode               = CullMode::NONE;
+    raster.line_width              = 1.0f;
+
     PipelineDescriptor pipeline_descriptor = {};
     pipeline_descriptor.add_name("triangle_pipeline")
       .set_topology(TopologyType::TRIANGLE)
       .add_shader_state(shader_state)
-      .add_viewport(viewport_state);
+      .add_viewport(viewport_state)
+      .add_rasterization(raster);
 
     pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(Vertex)});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
@@ -101,7 +170,7 @@ bool RendererModule::start()
       {1, 0, offsetof(Vertex, color), VertexInputFormatType::VEC3});
 
     // CREATING VERTEX AND INDEX BUFFER
-    u32 buffer_size = static_cast<u32>(sizeof(Vertex) * triangle.size());
+    u32 buffer_size = static_cast<u32>(sizeof(Vertex) * cube.size());
 
     BufferDescriptor buffer_descriptor;
     buffer_descriptor.size = buffer_size;
@@ -110,7 +179,7 @@ bool RendererModule::start()
     BufferDescriptor staging_buffer_descriptor;
     staging_buffer_descriptor.size = buffer_size;
     staging_buffer_descriptor.type = BufferType::STAGING;
-    staging_buffer_descriptor.data = triangle.data();
+    staging_buffer_descriptor.data = cube.data();
     const auto staging_buffer      = renderer->create_buffer(staging_buffer_descriptor).id;
 
     renderer->copy_buffer(staging_buffer, triangle_mesh, buffer_size);
@@ -137,7 +206,6 @@ bool RendererModule::start()
     global_ubo                     = renderer->create_buffer(uniform_buffer_descriptor).id;
 
     // CREATING DESCRIPTOR SET LAYOUTS
-
     DescriptorSetBindingDescriptor binding = {0,
                                               1,
                                               ShaderStageType::VERTEX,
