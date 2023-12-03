@@ -2,6 +2,7 @@
 
 #include <render_device.h>
 #include <resources/commandbuffer.h>
+#include <resources/resource_pool.h>
 #include <resources/shader_state.h>
 #include <vulkan/utils/vulkan_commandbuffer.h>
 #include <vulkan/utils/vulkan_pipeline_builder.h>
@@ -9,11 +10,18 @@
 #include <vulkan/utils/vulkan_shader_loader.h>
 #include <vulkan/utils/vulkan_swapchain_builder.h>
 
+namespace sogas
+{
+namespace engine
+{
+struct StackAllocator;
+}
+} // namespace sogas
+
 namespace pinut
 {
 namespace vulkan
 {
-
 struct VulkanBuffer
 {
     VkBuffer       buffer;
@@ -47,14 +55,14 @@ class VulkanDevice : public GPUDevice
 
     resources::CommandBuffer* get_command_buffer(bool begin) override;
 
-    void* map_buffer(const u32 buffer_id, const u32 size) override;
-    void  unmap_buffer(const u32 buffer_id) override;
+    void* map_buffer(const resources::BufferHandle buffer_id, const u32 size) override;
+    void  unmap_buffer(const resources::BufferHandle buffer_id) override;
 
-    void copy_buffer(const u32 src_buffer_id,
-                     const u32 dst_buffer_id,
-                     const u32 size,
-                     const u32 src_offset = 0,
-                     const u32 dst_offset = 0) override;
+    void copy_buffer(const resources::BufferHandle src_buffer_id,
+                     const resources::BufferHandle dst_buffer_id,
+                     const u32                     size,
+                     const u32                     src_offset = 0,
+                     const u32                     dst_offset = 0) override;
 
     void destroy_buffer(resources::BufferHandle handle) override;
     void destroy_texture(resources::TextureHandle handle) override;
@@ -62,12 +70,8 @@ class VulkanDevice : public GPUDevice
     static std::map<std::string, VulkanShaderState> shaders;
     static std::map<std::string, VulkanPipeline>    pipelines;
     static std::map<std::string, VulkanRenderPass>  render_passes;
-    static std::map<u32, VulkanBuffer>              buffers;
     static std::map<u32, VkDescriptorSetLayout>     descriptor_set_layouts;
     static std::map<u32, VkDescriptorSet>           descriptor_sets;
-
-    // TODO Do not use this values as buffer indexes.
-    u32 buffer_index = INVALID_ID;
 
     static const u32 MAX_SWAPCHAIN_IMAGES = 3;
 
@@ -84,6 +88,9 @@ class VulkanDevice : public GPUDevice
     {
         return "Swapchain_renderpass";
     };
+
+    // Access resources
+    VulkanBuffer* access_buffer(resources::BufferHandle handle);
 
   private:
     bool                                 create_instance();
@@ -105,6 +112,7 @@ class VulkanDevice : public GPUDevice
                               VkBufferUsageFlags    usage_flags,
                               VkMemoryPropertyFlags memory_property_flags,
                               VulkanBuffer*         buffer);
+
 
     // Window handle
     void* window_handle = nullptr;
@@ -141,6 +149,8 @@ class VulkanDevice : public GPUDevice
     VulkanCommandBuffer command_buffer[MAX_SWAPCHAIN_IMAGES];
 
     VkDescriptorPool descriptor_pool;
+
+    resources::ResourcePool buffers;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;

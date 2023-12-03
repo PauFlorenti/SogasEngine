@@ -28,8 +28,10 @@ class VulkanCommandBuffer : public resources::CommandBuffer
 
     void bind_descriptor_set(const u32 descriptor_set_id) override;
 
-    void bind_vertex_buffer(const u32 buffer_id, const u32 binding, const u32 offset) override;
-    void bind_index_buffer(const u32 buffer_id) override;
+    void bind_vertex_buffer(const resources::BufferHandle handle,
+                            const u32                     binding,
+                            const u32                     offset) override;
+    void bind_index_buffer(const resources::BufferHandle handle) override;
 
     VkCommandBuffer cmd = VK_NULL_HANDLE;
 

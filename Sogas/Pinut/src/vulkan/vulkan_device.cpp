@@ -145,7 +145,6 @@ static constexpr bool enable_validation_layers = false;
 std::map<std::string, VulkanShaderState> VulkanDevice::shaders;
 std::map<std::string, VulkanPipeline>    VulkanDevice::pipelines;
 std::map<std::string, VulkanRenderPass>  VulkanDevice::render_passes;
-std::map<u32, VulkanBuffer>              VulkanDevice::buffers;
 std::map<u32, VkDescriptorSetLayout>     VulkanDevice::descriptor_set_layouts;
 std::map<u32, VkDescriptorSet>           VulkanDevice::descriptor_sets;
 
@@ -167,6 +166,8 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     vkGetPhysicalDeviceMemoryProperties(physical_device, &physical_device_memory_properties);
 
     create_swapchain();
+
+    buffers.init(128, sizeof(VulkanBuffer));
 
     // Move temporal render pass here for the swapchain's framebuffers creation
     VkAttachmentDescription color_attachment = {};
@@ -287,12 +288,6 @@ void VulkanDevice::shutdown()
         vkDestroyPipelineLayout(device, it.second.pipeline_layout, nullptr);
     }
 
-    for (auto& it : buffers)
-    {
-        vkDestroyBuffer(device, it.second.buffer, nullptr);
-        vkFreeMemory(device, it.second.memory, nullptr);
-    }
-
     for (u32 i = 0; i < MAX_SWAPCHAIN_IMAGES; ++i)
     {
         vkDestroyFence(device, render_fences[i], nullptr);
@@ -320,6 +315,14 @@ void VulkanDevice::resize(u32 width, u32 height)
 
 resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescriptor& descriptor)
 {
+    resources::BufferHandle handle{buffers.get_resource()};
+    if (handle.id == INVALID_ID)
+    {
+        return handle;
+    }
+
+    VulkanBuffer* buffer = access_buffer(handle);
+
     VkBufferUsageFlags    usage_flags  = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
     VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
 
@@ -352,21 +355,18 @@ resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescr
             break;
     }
 
-    VulkanBuffer buffer;
-    create_vulkan_buffer(descriptor.size, usage_flags, memory_flags, &buffer);
+    create_vulkan_buffer(descriptor.size, usage_flags, memory_flags, buffer);
 
     if (descriptor.data)
     {
         // TODO Descriptor should provide offset. Data may not be at position 0.
         void* data;
-        vkMapMemory(device, buffer.memory, 0, descriptor.size, 0, &data);
+        vkMapMemory(device, buffer->memory, 0, descriptor.size, 0, &data);
         memcpy(data, descriptor.data, descriptor.size);
-        vkUnmapMemory(device, buffer.memory);
+        vkUnmapMemory(device, buffer->memory);
     }
 
-    VulkanDevice::buffers.insert({++buffer_index, buffer});
-
-    return (resources::BufferHandle)(buffer_index);
+    return handle;
 }
 
 resources::TextureHandle VulkanDevice::create_texture(
@@ -435,15 +435,11 @@ const u32 VulkanDevice::create_descriptor_set(const resources::DescriptorSetDesc
     VkDescriptorSet descriptor_set;
     VK_CHECK(vkAllocateDescriptorSets(device, &info, &descriptor_set));
 
-    auto buffer_it = buffers.find(descriptor.buffer_index);
-    if (buffer_it == buffers.end())
-    {
-        PFATAL("Invalid buffer passes for descriptor set.");
-        return INVALID_ID;
-    }
+    const auto buffer = access_buffer(descriptor.buffer);
+    ASSERT(buffer != nullptr);
 
     VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer                 = buffer_it->second.buffer;
+    buffer_info.buffer                 = buffer->buffer;
     buffer_info.range                  = VK_WHOLE_SIZE;
     buffer_info.offset                 = 0;
 
@@ -546,65 +542,49 @@ resources::CommandBuffer* VulkanDevice::get_command_buffer(bool begin)
     return &command_buffer[current_frame];
 }
 
-void* VulkanDevice::map_buffer(const u32 buffer_id, u32 size)
+void* VulkanDevice::map_buffer(const resources::BufferHandle handle, u32 size)
 {
-    ASSERT(buffer_id != INVALID_ID);
+    ASSERT(handle.id != INVALID_ID);
     ASSERT(size > 0);
 
-    auto it = buffers.find(buffer_id);
+    auto buffer = static_cast<VulkanBuffer*>(buffers.access_resource(handle.id));
 
-    if (it == buffers.end())
-    {
-        return nullptr;
-    }
-
-    auto buffer = it->second;
+    ASSERT(buffer != nullptr);
 
     void* data;
-    vkMapMemory(device, buffer.memory, 0, size, 0, &data);
+    vkMapMemory(device, buffer->memory, 0, size, 0, &data);
 
     return data;
 }
 
-void VulkanDevice::unmap_buffer(const u32 buffer_id)
+void VulkanDevice::unmap_buffer(const resources::BufferHandle buffer_handle)
 {
-    ASSERT(buffer_id != INVALID_ID);
+    ASSERT(buffer_handle.id != INVALID_ID);
 
-    auto it = buffers.find(buffer_id);
+    const auto buffer = access_buffer(buffer_handle);
+    ASSERT(buffer != nullptr);
 
-    if (it == buffers.end())
-    {
-        return;
-    }
-
-    auto buffer = it->second;
-
-    vkUnmapMemory(device, buffer.memory);
+    vkUnmapMemory(device, buffer->memory);
 }
 
-void VulkanDevice::copy_buffer(const u32 src_buffer_id,
-                               const u32 dst_buffer_id,
-                               const u32 size,
-                               const u32 src_offset,
-                               const u32 dst_offset)
+void VulkanDevice::copy_buffer(const resources::BufferHandle src_buffer_handle,
+                               const resources::BufferHandle dst_buffer_handle,
+                               const u32                     size,
+                               const u32                     src_offset,
+                               const u32                     dst_offset)
 {
-    ASSERT(src_buffer_id != INVALID_ID && dst_buffer_id != INVALID_ID);
-    ASSERT(src_buffer_id != dst_buffer_id);
-
+    ASSERT(src_buffer_handle.id != dst_buffer_handle.id);
     // Get buffers
     // TODO simplify this.
 
-    const auto src_buffer_iterator = buffers.find(src_buffer_id);
-    const auto dst_buffer_iterator = buffers.find(dst_buffer_id);
-    if (src_buffer_iterator == buffers.end() || dst_buffer_iterator == buffers.end())
+    const auto src_buffer = access_buffer(src_buffer_handle);
+    const auto dst_buffer = access_buffer(dst_buffer_handle);
+    if (src_buffer == nullptr || dst_buffer == nullptr)
     {
         // TODO #include Windows.h gets in conflict with PERROR(). Find a way to user own logger.
         //PERROR("Trying to copy invalid buffers.");
         return;
     }
-
-    const auto src_buffer = src_buffer_iterator->second;
-    const auto dst_buffer = dst_buffer_iterator->second;
 
     // Copy logic
     VkCommandBufferAllocateInfo cmd_alloc_info = vkinit::command_buffer_allocate_info(command_pool);
@@ -621,7 +601,7 @@ void VulkanDevice::copy_buffer(const u32 src_buffer_id,
     region.size         = size;
     region.dstOffset    = dst_offset;
     region.srcOffset    = src_offset;
-    vkCmdCopyBuffer(copy_cmd, src_buffer.buffer, dst_buffer.buffer, 1, &region);
+    vkCmdCopyBuffer(copy_cmd, src_buffer->buffer, dst_buffer->buffer, 1, &region);
 
     vkEndCommandBuffer(copy_cmd);
 
@@ -637,18 +617,12 @@ void VulkanDevice::copy_buffer(const u32 src_buffer_id,
 
 void VulkanDevice::destroy_buffer(resources::BufferHandle handle)
 {
-    auto it = buffers.find(handle.id);
+    const auto buffer = access_buffer(handle);
 
-    if (it == buffers.end())
-    {
-        //PERROR("Trying to destroy a non-existing buffer.");
-        return;
-    }
+    vkDestroyBuffer(device, buffer->buffer, nullptr);
+    vkFreeMemory(device, buffer->memory, nullptr);
 
-    vkDestroyBuffer(device, it->second.buffer, nullptr);
-    vkFreeMemory(device, it->second.memory, nullptr);
-
-    buffers.erase(it);
+    buffers.remove_resource(handle.id);
 }
 
 void VulkanDevice::destroy_texture(resources::TextureHandle /*handle*/)
@@ -707,6 +681,11 @@ bool VulkanDevice::create_instance()
     auto ok = vkCreateInstance(&instance_info, nullptr, &vulkan_instance);
     VK_CHECK(ok);
     return true;
+}
+
+VulkanBuffer* VulkanDevice::access_buffer(resources::BufferHandle handle)
+{
+    return static_cast<VulkanBuffer*>(buffers.access_resource(handle.id));
 }
 
 #ifdef _DEBUG
@@ -1012,6 +991,5 @@ void VulkanDevice::create_vulkan_buffer(const u32             size,
 
     vkBindBufferMemory(device, buffer->buffer, buffer->memory, 0);
 }
-
 } // namespace vulkan
 } // namespace pinut

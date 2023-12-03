@@ -96,8 +96,8 @@ struct DescriptorSetLayoutDescriptor
 struct DescriptorSetDescriptor
 {
     // TODO At the moment only one buffer. Multiple resources per set in the future.
-    u32 buffer_index = INVALID_ID;
-    u32 binding      = INVALID_ID;
+    BufferHandle buffer  = {INVALID_ID};
+    u32          binding = INVALID_ID;
 
     u32 layout_id = INVALID_ID;
 
@@ -105,9 +105,9 @@ struct DescriptorSetDescriptor
 
     DescriptorSetDescriptor& reset()
     {
-        buffer_index = INVALID_ID;
-        binding      = INVALID_ID;
-        name         = "";
+        buffer  = {INVALID_ID};
+        binding = INVALID_ID;
+        name    = "";
         return *this;
     }
 
@@ -118,12 +118,12 @@ struct DescriptorSetDescriptor
         return *this;
     }
 
-    DescriptorSetDescriptor& add_buffer(const BufferHandle& buffer, const u16 new_binding)
+    DescriptorSetDescriptor& add_buffer(const BufferHandle& new_buffer, const u16 new_binding)
     {
-        ASSERT(buffer.id != INVALID_ID);
+        ASSERT(new_buffer.id != INVALID_ID);
 
-        buffer_index = buffer.id;
-        binding      = static_cast<u32>(new_binding);
+        buffer.id = new_buffer.id;
+        binding   = static_cast<u32>(new_binding);
         return *this;
     }
 

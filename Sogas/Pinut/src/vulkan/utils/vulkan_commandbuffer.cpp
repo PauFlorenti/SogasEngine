@@ -140,46 +140,38 @@ void VulkanCommandBuffer::bind_descriptor_set(const u32 descriptor_set_id)
                             nullptr);
 }
 
-void VulkanCommandBuffer::bind_vertex_buffer(const u32 buffer_id,
-                                             const u32 binding,
-                                             const u32 offset)
+void VulkanCommandBuffer::bind_vertex_buffer(const resources::BufferHandle handle,
+                                             const u32                     binding,
+                                             const u32                     offset)
 {
-    ASSERT(buffer_id != INVALID_ID);
-
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);
 
-    auto it = vulkan_device->buffers.find(buffer_id);
+    auto buffer = vulkan_device->access_buffer(handle);
 
-    if (it == vulkan_device->buffers.end())
+    if (buffer == nullptr)
     {
         return;
     }
-
-    auto buffer = it->second;
 
     VkDeviceSize vulkan_offset = {offset};
 
-    vkCmdBindVertexBuffers(cmd, binding, 1, &buffer.buffer, &vulkan_offset);
+    vkCmdBindVertexBuffers(cmd, binding, 1, &buffer->buffer, &vulkan_offset);
 }
 
-void VulkanCommandBuffer::bind_index_buffer(const u32 buffer_id)
+void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle handle)
 {
-    ASSERT(buffer_id != INVALID_ID);
-
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);
 
-    auto it = vulkan_device->buffers.find(buffer_id);
+    auto buffer = vulkan_device->access_buffer(handle);
 
-    if (it == vulkan_device->buffers.end())
+    if (buffer == nullptr)
     {
         return;
     }
 
-    auto buffer = it->second;
-
-    vkCmdBindIndexBuffer(cmd, buffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(cmd, buffer->buffer, 0, VK_INDEX_TYPE_UINT16);
 }
 } // namespace vulkan
 } // namespace pinut

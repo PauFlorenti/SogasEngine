@@ -118,16 +118,19 @@ std::vector<u16> indices = {
     22, 23, 21 };
 // clang-format on
 
-u32 triangle_mesh;
-u32 triangle_index;
-u32 global_ubo;
-u32 descriptor_set_id;
-//u32 uniform_buffers[3];
+pinut::resources::BufferHandle triangle_mesh;
+pinut::resources::BufferHandle triangle_index;
+pinut::resources::BufferHandle global_ubo;
+u32                            descriptor_set_id;
 
 bool RendererModule::start()
 {
+    //engine::StackAllocator* allocator = new engine::StackAllocator();
+    //allocator->init(mb(8));
+
     pinut::DeviceDescriptor descriptor;
     descriptor.set_window(1280, 720, window_handle);
+    //descriptor.allocator = allocator;
 
     renderer = pinut::GPUDevice::create(pinut::GraphicsAPI::Vulkan);
     renderer->init(descriptor);
@@ -176,13 +179,13 @@ bool RendererModule::start()
 
     BufferDescriptor buffer_descriptor;
     buffer_descriptor.size = buffer_size;
-    triangle_mesh          = renderer->create_buffer(buffer_descriptor).id;
+    triangle_mesh          = renderer->create_buffer(buffer_descriptor);
 
     BufferDescriptor staging_buffer_descriptor;
     staging_buffer_descriptor.size = buffer_size;
     staging_buffer_descriptor.type = BufferType::STAGING;
     staging_buffer_descriptor.data = cube.data();
-    const auto staging_buffer      = renderer->create_buffer(staging_buffer_descriptor).id;
+    const auto staging_buffer      = renderer->create_buffer(staging_buffer_descriptor);
 
     renderer->copy_buffer(staging_buffer, triangle_mesh, buffer_size);
     renderer->destroy_buffer({staging_buffer});
@@ -190,13 +193,13 @@ bool RendererModule::start()
     const auto index_buffer_size = static_cast<u32>(sizeof(u32) * indices.size());
     buffer_descriptor.size       = index_buffer_size;
     buffer_descriptor.type       = BufferType::INDEX;
-    triangle_index               = renderer->create_buffer(buffer_descriptor).id;
+    triangle_index               = renderer->create_buffer(buffer_descriptor);
 
     BufferDescriptor index_staging_buffer_descriptor;
     index_staging_buffer_descriptor.data = indices.data();
     index_staging_buffer_descriptor.size = index_buffer_size;
     index_staging_buffer_descriptor.type = BufferType::STAGING;
-    const auto index_staging_buffer = renderer->create_buffer(index_staging_buffer_descriptor).id;
+    const auto index_staging_buffer      = renderer->create_buffer(index_staging_buffer_descriptor);
 
     renderer->copy_buffer(index_staging_buffer, triangle_index, index_buffer_size);
     renderer->destroy_buffer({index_staging_buffer});
@@ -205,7 +208,7 @@ bool RendererModule::start()
     BufferDescriptor uniform_buffer_descriptor;
     uniform_buffer_descriptor.type = BufferType::UNIFORM;
     uniform_buffer_descriptor.size = sizeof(UniformBuffer);
-    global_ubo                     = renderer->create_buffer(uniform_buffer_descriptor).id;
+    global_ubo                     = renderer->create_buffer(uniform_buffer_descriptor);
 
     // CREATING DESCRIPTOR SET LAYOUTS
     DescriptorSetBindingDescriptor binding = {0,
@@ -235,6 +238,10 @@ bool RendererModule::start()
 
 void RendererModule::stop()
 {
+    renderer->destroy_buffer(global_ubo);
+    renderer->destroy_buffer(triangle_index);
+    renderer->destroy_buffer(triangle_mesh);
+
     renderer->shutdown();
 }
 
