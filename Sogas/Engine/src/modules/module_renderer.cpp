@@ -2,10 +2,12 @@
 
 #include <modules/module_renderer.h>
 #include <resources/pipeline.h>
+#include <resources/resources.h>
 #include <resources/shader_state.h>
 
 // TODO remove. Renderer should not calculate dt.
 #include <chrono>
+#include <stb_image.h>
 
 namespace sogas
 {
@@ -48,13 +50,15 @@ struct UniformBuffer
     glm::mat4 proj;
 };
 
-std::vector<Vertex> plane = {{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-                             {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-                             {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
-                             {glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f)}};
+std::vector<Vertex> plane_vertices = {{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+                                      {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+                                      {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
+                                      {glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f)}};
+
+std::vector<u16> plane_indices = {0, 1, 2, 0, 2, 3};
 
 // clang-format off
-std::vector<Vertex> cube = {
+std::vector<Vertex> cube_vertices = {
     //Top
     {glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //0
     {glm::vec3( 0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //1
@@ -92,7 +96,7 @@ std::vector<Vertex> cube = {
     {glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}  //23
 };
 
-std::vector<u16> indices = { 
+std::vector<u16> cube_indices = { 
     //Top
     0, 1, 2,
     2, 3, 1,
@@ -118,24 +122,23 @@ std::vector<u16> indices = {
     22, 23, 21 };
 // clang-format on
 
-pinut::resources::BufferHandle triangle_mesh;
-pinut::resources::BufferHandle triangle_index;
-pinut::resources::BufferHandle global_ubo;
-u32                            descriptor_set_id;
+pinut::resources::BufferHandle  plane_buffer_vertices;
+pinut::resources::BufferHandle  plane_buffer_indices;
+pinut::resources::BufferHandle  cube_buffer_vertices;
+pinut::resources::BufferHandle  cube_buffer_indices;
+pinut::resources::BufferHandle  global_ubo;
+pinut::resources::TextureHandle texture_handle;
+u32                             descriptor_set_id;
+
+using namespace pinut::resources;
 
 bool RendererModule::start()
 {
-    //engine::StackAllocator* allocator = new engine::StackAllocator();
-    //allocator->init(mb(8));
-
     pinut::DeviceDescriptor descriptor;
     descriptor.set_window(1280, 720, window_handle);
-    //descriptor.allocator = allocator;
 
     renderer = pinut::GPUDevice::create(pinut::GraphicsAPI::Vulkan);
     renderer->init(descriptor);
-
-    using namespace pinut::resources;
 
     std::vector<u32> vs_buffer, fs_buffer;
 
@@ -175,34 +178,76 @@ bool RendererModule::start()
       {1, 0, offsetof(Vertex, color), VertexInputFormatType::VEC3});
 
     // CREATING VERTEX AND INDEX BUFFER
-    u32 buffer_size = static_cast<u32>(sizeof(Vertex) * cube.size());
+    // CUBE
+    const auto cube_vertex_buffer_size = static_cast<u32>(sizeof(Vertex) * cube_vertices.size());
 
-    BufferDescriptor buffer_descriptor;
-    buffer_descriptor.size = buffer_size;
-    triangle_mesh          = renderer->create_buffer(buffer_descriptor);
+    BufferDescriptor cube_buffer_descriptor;
+    cube_buffer_descriptor.size = cube_vertex_buffer_size;
+    cube_buffer_vertices        = renderer->create_buffer(cube_buffer_descriptor);
 
-    BufferDescriptor staging_buffer_descriptor;
-    staging_buffer_descriptor.size = buffer_size;
-    staging_buffer_descriptor.type = BufferType::STAGING;
-    staging_buffer_descriptor.data = cube.data();
-    const auto staging_buffer      = renderer->create_buffer(staging_buffer_descriptor);
+    BufferDescriptor cube_staging_buffer_descriptor;
+    cube_staging_buffer_descriptor.size = cube_vertex_buffer_size;
+    cube_staging_buffer_descriptor.type = BufferType::STAGING;
+    cube_staging_buffer_descriptor.data = cube_vertices.data();
+    const auto cube_staging_buffer      = renderer->create_buffer(cube_staging_buffer_descriptor);
 
-    renderer->copy_buffer(staging_buffer, triangle_mesh, buffer_size);
-    renderer->destroy_buffer({staging_buffer});
+    renderer->copy_buffer(cube_staging_buffer, cube_buffer_vertices, cube_vertex_buffer_size);
+    renderer->destroy_buffer({cube_staging_buffer});
 
-    const auto index_buffer_size = static_cast<u32>(sizeof(u32) * indices.size());
-    buffer_descriptor.size       = index_buffer_size;
-    buffer_descriptor.type       = BufferType::INDEX;
-    triangle_index               = renderer->create_buffer(buffer_descriptor);
+    const auto cube_indices_buffer_size = static_cast<u32>(sizeof(u16) * cube_indices.size());
+    cube_buffer_descriptor.size         = cube_indices_buffer_size;
+    cube_buffer_descriptor.type         = BufferType::INDEX;
+    cube_buffer_indices                 = renderer->create_buffer(cube_buffer_descriptor);
 
     BufferDescriptor index_staging_buffer_descriptor;
-    index_staging_buffer_descriptor.data = indices.data();
-    index_staging_buffer_descriptor.size = index_buffer_size;
+    index_staging_buffer_descriptor.data = cube_indices.data();
+    index_staging_buffer_descriptor.size = cube_indices_buffer_size;
     index_staging_buffer_descriptor.type = BufferType::STAGING;
     const auto index_staging_buffer      = renderer->create_buffer(index_staging_buffer_descriptor);
 
-    renderer->copy_buffer(index_staging_buffer, triangle_index, index_buffer_size);
+    renderer->copy_buffer(index_staging_buffer, cube_buffer_indices, cube_indices_buffer_size);
     renderer->destroy_buffer({index_staging_buffer});
+
+    // PLANE
+    const auto plane_vertices_size = static_cast<u32>(sizeof(Vertex) * plane_vertices.size());
+
+    BufferDescriptor plane_buffer_descriptor{};
+    plane_buffer_descriptor.size = plane_vertices_size;
+    plane_buffer_descriptor.type = BufferType::VERTEX;
+    plane_buffer_vertices        = renderer->create_buffer(plane_buffer_descriptor);
+
+    BufferDescriptor plane_staging_buffer_descriptor{};
+    plane_staging_buffer_descriptor.data = plane_vertices.data();
+    plane_staging_buffer_descriptor.size = plane_vertices_size;
+    plane_staging_buffer_descriptor.type = BufferType::STAGING;
+
+    auto plane_staging_buffer_vertices = renderer->create_buffer(plane_staging_buffer_descriptor);
+
+    renderer->copy_buffer(plane_staging_buffer_vertices,
+                          plane_buffer_vertices,
+                          plane_vertices_size);
+
+    renderer->destroy_buffer(plane_staging_buffer_vertices);
+
+    const auto indices_buffer_size = static_cast<u32>(sizeof(u16) * plane_indices.size());
+
+    BufferDescriptor plane_indices_buffer_descriptor{};
+    plane_indices_buffer_descriptor.size = indices_buffer_size;
+    plane_indices_buffer_descriptor.type = BufferType::INDEX;
+
+    plane_buffer_indices = renderer->create_buffer(plane_indices_buffer_descriptor);
+
+    BufferDescriptor plane_indices_staging_buffer_descriptor{};
+    plane_indices_staging_buffer_descriptor.data = plane_indices.data();
+    plane_indices_staging_buffer_descriptor.size = indices_buffer_size;
+    plane_indices_staging_buffer_descriptor.type = BufferType::STAGING;
+
+    auto plane_staging_buffer_indices =
+      renderer->create_buffer(plane_indices_staging_buffer_descriptor);
+
+    renderer->copy_buffer(plane_staging_buffer_indices, plane_buffer_indices, indices_buffer_size);
+
+    renderer->destroy_buffer(plane_staging_buffer_indices);
 
     // CREATING UNIFORM BUFFERS
     BufferDescriptor uniform_buffer_descriptor;
@@ -231,6 +276,15 @@ bool RendererModule::start()
     // TODO: Handle pipeline creation differently ...
     // Data should be given from engine, not hardcoded in renderer.
 
+    u32               texture_data = 0xFFFFFFFF;
+    TextureDescriptor texture_descriptor{};
+    texture_descriptor.width         = 1;
+    texture_descriptor.height        = 1;
+    texture_descriptor.channel_count = 4;
+    texture_descriptor.data          = &texture_data;
+
+    texture_handle = renderer->create_texture(texture_descriptor);
+
     renderer->create_pipeline(pipeline_descriptor);
 
     return true;
@@ -238,9 +292,12 @@ bool RendererModule::start()
 
 void RendererModule::stop()
 {
+    renderer->destroy_texture(texture_handle);
     renderer->destroy_buffer(global_ubo);
-    renderer->destroy_buffer(triangle_index);
-    renderer->destroy_buffer(triangle_mesh);
+    renderer->destroy_buffer(plane_buffer_indices);
+    renderer->destroy_buffer(plane_buffer_vertices);
+    renderer->destroy_buffer(cube_buffer_indices);
+    renderer->destroy_buffer(cube_buffer_vertices);
 
     renderer->shutdown();
 }
@@ -279,15 +336,20 @@ void RendererModule::render()
     cmd->set_viewport(nullptr);
 
     cmd->bind_descriptor_set(descriptor_set_id);
-    cmd->bind_vertex_buffer(triangle_mesh, 0, 0);
-    cmd->bind_index_buffer(triangle_index);
+    cmd->bind_vertex_buffer(cube_buffer_vertices, 0, 0);
+    cmd->bind_index_buffer(cube_buffer_indices, BufferIndexType::UINT16);
 
-    cmd->draw_indexed(0, static_cast<u32>(indices.size()), 0, 1, 0);
+    cmd->draw_indexed(0, static_cast<u32>(cube_indices.size()), 0, 1, 0);
+
+    cmd->bind_vertex_buffer(plane_buffer_vertices, 0, 0);
+    cmd->bind_index_buffer(plane_buffer_indices, BufferIndexType::UINT16);
+    cmd->draw_indexed(0, static_cast<u32>(plane_indices.size()), 0, 1, 0);
 
     renderer->end_frame();
 
     current_image++;
 }
+
 void RendererModule::resize_window(u32 width, u32 height)
 {
     renderer->resize(width, height);

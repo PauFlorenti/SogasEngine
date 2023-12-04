@@ -61,5 +61,12 @@ enum class TopologyType
     TRIANGLE_FAN,
     COUNT
 };
+
+enum class BufferIndexType
+{
+    UINT16,
+    UINT32,
+    COUNT
+};
 } // namespace resources
 } // namespace pinut

@@ -2,6 +2,7 @@
 
 #include <resources/pipeline.h>
 #include <vulkan/utils/vulkan_commandbuffer.h>
+#include <vulkan/utils/vulkan_utils.h>
 #include <vulkan/vulkan_device.h>
 
 namespace pinut
@@ -159,7 +160,8 @@ void VulkanCommandBuffer::bind_vertex_buffer(const resources::BufferHandle handl
     vkCmdBindVertexBuffers(cmd, binding, 1, &buffer->buffer, &vulkan_offset);
 }
 
-void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle handle)
+void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle handle,
+                                            resources::BufferIndexType    index_type)
 {
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);
@@ -171,7 +173,7 @@ void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle handle
         return;
     }
 
-    vkCmdBindIndexBuffer(cmd, buffer->buffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(cmd, buffer->buffer, 0, get_buffer_index_type(index_type));
 }
 } // namespace vulkan
 } // namespace pinut

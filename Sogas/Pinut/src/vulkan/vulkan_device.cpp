@@ -168,6 +168,7 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     create_swapchain();
 
     buffers.init(128, sizeof(VulkanBuffer));
+    textures.init(128, sizeof(VulkanTexture));
 
     // Move temporal render pass here for the swapchain's framebuffers creation
     VkAttachmentDescription color_attachment = {};
@@ -225,9 +226,9 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
 
     for (u32 i = 0; i < MAX_SWAPCHAIN_IMAGES; ++i)
     {
-        command_buffer[i].device = this;
-        auto cmd_alloc_info      = vkinit::command_buffer_allocate_info(command_pool);
-        VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &command_buffer[i].cmd));
+        command_buffers[i].device = this;
+        auto cmd_alloc_info       = vkinit::command_buffer_allocate_info(command_pool);
+        VK_CHECK(vkAllocateCommandBuffers(device, &cmd_alloc_info, &command_buffers[i].cmd));
     }
 
     // Create semaphores and fences
@@ -370,9 +371,191 @@ resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescr
 }
 
 resources::TextureHandle VulkanDevice::create_texture(
-  const resources::TextureDescriptor& /*descriptor*/)
+  const resources::TextureDescriptor& descriptor)
 {
-    return {};
+    resources::TextureHandle handle{textures.get_resource()};
+    if (handle.id == INVALID_ID)
+    {
+        return handle;
+    }
+
+    if (descriptor.data == nullptr)
+    {
+        PWARN("No data provided for texture creation.");
+        return {INVALID_ID};
+    }
+
+    const auto   texture_size = descriptor.width * descriptor.height * descriptor.channel_count;
+    VulkanBuffer staging_buffer;
+    create_vulkan_buffer(texture_size,
+                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+                         &staging_buffer);
+
+    void* data;
+    vkMapMemory(device, staging_buffer.memory, 0, texture_size, 0, &data);
+    memcpy(data, descriptor.data, texture_size);
+    vkUnmapMemory(device, staging_buffer.memory);
+
+    VkImageCreateInfo info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    info.mipLevels         = descriptor.mip_levels;
+    info.imageType         = VK_IMAGE_TYPE_2D;
+    info.extent            = {descriptor.width, descriptor.height, 1};
+    info.arrayLayers       = 1;
+    info.format            = VK_FORMAT_R8G8B8A8_SRGB;
+    info.tiling            = VK_IMAGE_TILING_LINEAR;
+    info.initialLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
+    info.usage             = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    info.sharingMode       = VK_SHARING_MODE_EXCLUSIVE;
+    info.samples           = VK_SAMPLE_COUNT_1_BIT;
+
+    VulkanTexture* texture = access_texture(handle);
+
+    VK_CHECK(vkCreateImage(device, &info, nullptr, &texture->image));
+
+    VkMemoryRequirements memory_requirements;
+    vkGetImageMemoryRequirements(device, texture->image, &memory_requirements);
+
+    VkMemoryAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    allocate_info.allocationSize       = memory_requirements.size;
+    allocate_info.memoryTypeIndex =
+      find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VK_CHECK(vkAllocateMemory(device, &allocate_info, nullptr, &texture->memory));
+
+    vkBindImageMemory(device, texture->image, texture->memory, 0);
+
+    VkCommandBuffer             command_buffer    = VK_NULL_HANDLE;
+    VkCommandBufferAllocateInfo cmd_allocate_info = {
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    cmd_allocate_info.commandBufferCount = 1;
+    cmd_allocate_info.commandPool        = command_pool;
+    cmd_allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    VK_CHECK(vkAllocateCommandBuffers(device, &cmd_allocate_info, &command_buffer));
+
+    VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    barrier.image                           = texture->image;
+    barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.levelCount     = 1;
+    barrier.srcAccessMask                   = 0;
+    barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    vkCmdPipelineBarrier(command_buffer,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         0,
+                         0,
+                         nullptr,
+                         0,
+                         nullptr,
+                         1,
+                         &barrier);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset      = 0;
+    region.bufferRowLength   = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel       = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount     = 1;
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {descriptor.width, descriptor.height, 1};
+
+    vkCmdCopyBufferToImage(command_buffer,
+                           staging_buffer.buffer,
+                           texture->image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &region);
+
+    barrier.image                           = texture->image;
+    barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.levelCount     = 1;
+    barrier.srcAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask                   = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(command_buffer,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         0,
+                         0,
+                         nullptr,
+                         0,
+                         nullptr,
+                         1,
+                         &barrier);
+
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers    = &command_buffer;
+    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    vkQueueWaitIdle(graphics_queue);
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+
+    // TODO Use own buffer functions for allocation purposes.
+    vkDestroyBuffer(device, staging_buffer.buffer, nullptr);
+    vkFreeMemory(device, staging_buffer.memory, nullptr);
+
+    VkImageViewCreateInfo image_view_info           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    image_view_info.image                           = texture->image;
+    image_view_info.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_info.format                          = VK_FORMAT_R8G8B8A8_SRGB;
+    image_view_info.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_info.subresourceRange.baseArrayLayer = 0;
+    image_view_info.subresourceRange.layerCount     = 1;
+    image_view_info.subresourceRange.baseMipLevel   = 0;
+    image_view_info.subresourceRange.levelCount     = 1;
+
+    VK_CHECK(vkCreateImageView(device, &image_view_info, nullptr, &texture->image_view));
+
+    //! TODO Make sampler global, not per image.
+    VkSamplerCreateInfo sampler_info{};
+    sampler_info.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter               = VK_FILTER_LINEAR;
+    sampler_info.minFilter               = VK_FILTER_LINEAR;
+    sampler_info.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.anisotropyEnable        = VK_TRUE;
+    sampler_info.maxAnisotropy           = physical_device_properties.limits.maxSamplerAnisotropy;
+    sampler_info.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable           = VK_FALSE;
+    sampler_info.compareOp               = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias              = 0.0f;
+    sampler_info.minLod                  = 0.0f;
+    sampler_info.maxLod                  = 0.0f;
+
+    VK_CHECK(vkCreateSampler(device, &sampler_info, nullptr, &texture->sampler))
+
+    return handle;
 }
 
 resources::RenderPassHandle VulkanDevice::create_renderpass(
@@ -493,14 +676,14 @@ void VulkanDevice::end_frame()
     VK_CHECK(vkResetFences(device, 1, &render_fences[current_frame]));
 
     // Record commands.
-    vkCmdEndRenderPass(command_buffer[current_frame].cmd);
+    vkCmdEndRenderPass(command_buffers[current_frame].cmd);
 
-    VK_CHECK(vkEndCommandBuffer(command_buffer[current_frame].cmd));
+    VK_CHECK(vkEndCommandBuffer(command_buffers[current_frame].cmd));
 
     // Submit commands
     VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    VkSubmitInfo submit         = vkinit::submit_info(&command_buffer[current_frame].cmd);
+    VkSubmitInfo submit         = vkinit::submit_info(&command_buffers[current_frame].cmd);
     submit.pWaitDstStageMask    = &waitStage;
     submit.waitSemaphoreCount   = 1;
     submit.pWaitSemaphores      = &present_semaphores[current_frame];
@@ -536,10 +719,10 @@ resources::CommandBuffer* VulkanDevice::get_command_buffer(bool begin)
     {
         VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
         cmd_begin_info.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(command_buffer[current_frame].cmd, &cmd_begin_info);
+        vkBeginCommandBuffer(command_buffers[current_frame].cmd, &cmd_begin_info);
     }
 
-    return &command_buffer[current_frame];
+    return &command_buffers[current_frame];
 }
 
 void* VulkanDevice::map_buffer(const resources::BufferHandle handle, u32 size)
@@ -625,8 +808,14 @@ void VulkanDevice::destroy_buffer(resources::BufferHandle handle)
     buffers.remove_resource(handle.id);
 }
 
-void VulkanDevice::destroy_texture(resources::TextureHandle /*handle*/)
+void VulkanDevice::destroy_texture(resources::TextureHandle handle)
 {
+    const auto texture = access_texture(handle);
+
+    vkDestroySampler(device, texture->sampler, nullptr);
+    vkDestroyImageView(device, texture->image_view, nullptr);
+    vkDestroyImage(device, texture->image, nullptr);
+    vkFreeMemory(device, texture->memory, nullptr);
 }
 
 bool VulkanDevice::create_instance()
@@ -686,6 +875,11 @@ bool VulkanDevice::create_instance()
 VulkanBuffer* VulkanDevice::access_buffer(resources::BufferHandle handle)
 {
     return static_cast<VulkanBuffer*>(buffers.access_resource(handle.id));
+}
+
+VulkanTexture* VulkanDevice::access_texture(resources::TextureHandle handle)
+{
+    return static_cast<VulkanTexture*>(textures.access_resource(handle.id));
 }
 
 #ifdef _DEBUG

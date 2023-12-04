@@ -25,5 +25,7 @@ VkBufferUsageFlags get_buffer_usage_flag(resources::BufferType buffer_type);
 VkDescriptorType get_descriptor_type(resources::DescriptorType descriptor_type);
 
 VkShaderStageFlags get_shader_stage_flag(resources::ShaderStageType shader_stage);
+
+VkIndexType get_buffer_index_type(resources::BufferIndexType index_type);
 } // namespace vulkan
 } // namespace pinut

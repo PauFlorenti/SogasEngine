@@ -218,5 +218,23 @@ VkShaderStageFlags get_shader_stage_flag(resources::ShaderStageType shader_stage
             break;
     }
 }
+
+VkIndexType get_buffer_index_type(resources::BufferIndexType index_type)
+{
+    switch (index_type)
+    {
+        default:
+        case resources::BufferIndexType::UINT16:
+            return VK_INDEX_TYPE_UINT16;
+            break;
+        case resources::BufferIndexType::UINT32:
+            return VK_INDEX_TYPE_UINT32;
+            break;
+        case resources::BufferIndexType::COUNT:
+            PWARN("Invalid buffer index type provided.");
+            return VK_INDEX_TYPE_MAX_ENUM;
+            break;
+    }
+}
 } // namespace vulkan
 } // namespace pinut

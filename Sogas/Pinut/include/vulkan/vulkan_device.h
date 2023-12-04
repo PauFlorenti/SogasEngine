@@ -28,6 +28,14 @@ struct VulkanBuffer
     VkDeviceMemory memory;
 };
 
+struct VulkanTexture
+{
+    VkImage        image;
+    VkImageView    image_view;
+    VkSampler      sampler;
+    VkDeviceMemory memory;
+};
+
 class VulkanDevice : public GPUDevice
 {
   public:
@@ -90,7 +98,8 @@ class VulkanDevice : public GPUDevice
     };
 
     // Access resources
-    VulkanBuffer* access_buffer(resources::BufferHandle handle);
+    VulkanBuffer*  access_buffer(resources::BufferHandle handle);
+    VulkanTexture* access_texture(resources::TextureHandle handle);
 
   private:
     bool                                 create_instance();
@@ -112,7 +121,6 @@ class VulkanDevice : public GPUDevice
                               VkBufferUsageFlags    usage_flags,
                               VkMemoryPropertyFlags memory_property_flags,
                               VulkanBuffer*         buffer);
-
 
     // Window handle
     void* window_handle = nullptr;
@@ -146,11 +154,12 @@ class VulkanDevice : public GPUDevice
     std::vector<VkImage>     swapchain_images;
     std::vector<VkImageView> swapchain_image_views;
 
-    VulkanCommandBuffer command_buffer[MAX_SWAPCHAIN_IMAGES];
+    VulkanCommandBuffer command_buffers[MAX_SWAPCHAIN_IMAGES];
 
     VkDescriptorPool descriptor_pool;
 
     resources::ResourcePool buffers;
+    resources::ResourcePool textures;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
@@ -163,8 +172,7 @@ class VulkanDevice : public GPUDevice
 
     // Default triangle drawing. Probably gonna be removed from here.
     //! Temporal
-    VkCommandPool   command_pool;
-    VkCommandBuffer cmd;
+    VkCommandPool command_pool;
 
     VkSemaphore present_semaphores[MAX_SWAPCHAIN_IMAGES];
     VkSemaphore render_semaphores[MAX_SWAPCHAIN_IMAGES];
