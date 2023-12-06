@@ -24,8 +24,8 @@ void VulkanCommandBuffer::bind_pass(std::string pass)
     auto render_pass = VulkanDevice::render_passes.at(pass);
 
     VkRenderPassBeginInfo render_pass_begin_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-    render_pass_begin_info.clearValueCount       = 1;
-    render_pass_begin_info.pClearValues          = &clear_value;
+    render_pass_begin_info.clearValueCount       = 2;
+    render_pass_begin_info.pClearValues          = clear_values;
     render_pass_begin_info.framebuffer =
       render_pass.type == resources::RenderPassType::SWAPCHAIN ?
         vulkan_device->framebuffers[vulkan_device->current_frame] :
@@ -101,7 +101,8 @@ void VulkanCommandBuffer::set_scissors(const resources::Rect* new_scissor)
 
 void VulkanCommandBuffer::clear(f32 red, f32 green, f32 blue, f32 alpha)
 {
-    clear_value.color = {red, green, blue, alpha};
+    clear_values[0].color        = {red, green, blue, alpha};
+    clear_values[1].depthStencil = {1.0f, 0};
 }
 
 void VulkanCommandBuffer::draw(u32 first_vertex,
@@ -121,29 +122,24 @@ void VulkanCommandBuffer::draw_indexed(u32 first_index,
     vkCmdDrawIndexed(cmd, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
-void VulkanCommandBuffer::bind_descriptor_set(const u32 descriptor_set_id)
+void VulkanCommandBuffer::bind_descriptor_set(const resources::DescriptorSetHandle& handle)
 {
-    const auto iterator = VulkanDevice::descriptor_sets.find(descriptor_set_id);
-
-    if (iterator == VulkanDevice::descriptor_sets.end())
-    {
-        PFATAL("Failed to find descriptor set to be bound.");
-        return;
-    }
+    const auto vulkan_device  = dynamic_cast<VulkanDevice*>(device);
+    const auto descriptor_set = vulkan_device->access_descriptor_set(handle);
 
     vkCmdBindDescriptorSets(cmd,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
                             current_pipeline_layout,
                             0,
                             1,
-                            &iterator->second,
+                            &descriptor_set->descriptor_set,
                             0,
                             nullptr);
 }
 
-void VulkanCommandBuffer::bind_vertex_buffer(const resources::BufferHandle handle,
-                                             const u32                     binding,
-                                             const u32                     offset)
+void VulkanCommandBuffer::bind_vertex_buffer(const resources::BufferHandle& handle,
+                                             const u32                      binding,
+                                             const u32                      offset)
 {
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);
@@ -160,8 +156,8 @@ void VulkanCommandBuffer::bind_vertex_buffer(const resources::BufferHandle handl
     vkCmdBindVertexBuffers(cmd, binding, 1, &buffer->buffer, &vulkan_offset);
 }
 
-void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle handle,
-                                            resources::BufferIndexType    index_type)
+void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle& handle,
+                                            resources::BufferIndexType     index_type)
 {
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);

@@ -5,9 +5,21 @@
 #include <resources/resources.h>
 #include <resources/shader_state.h>
 
+#ifdef _WIN64
+#pragma warning(disable : 4615)
+#pragma warning(disable : 4389)
+#pragma warning(disable : 4244)
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#pragma warning(enable : 4244)
+#pragma warning(enable : 4389)
+#pragma warning(enable : 4615)
+#else
+#error "Only win64 platform implemented at the moment."
+#endif
+
 // TODO remove. Renderer should not calculate dt.
 #include <chrono>
-#include <stb_image.h>
 
 namespace sogas
 {
@@ -40,6 +52,7 @@ struct Vertex
 {
     glm::vec3 position;
     glm::vec3 color;
+    glm::vec2 uv;
     //glm::vec3 normal;
 };
 
@@ -50,50 +63,52 @@ struct UniformBuffer
     glm::mat4 proj;
 };
 
-std::vector<Vertex> plane_vertices = {{glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-                                      {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-                                      {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
-                                      {glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f)}};
+// clang-format off
+std::vector<Vertex> plane_vertices = {
+  {glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+  {glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+  {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)},
+  {glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f), glm::vec2(0.0f, 0.0f)},
+};
 
 std::vector<u16> plane_indices = {0, 1, 2, 0, 2, 3};
 
-// clang-format off
 std::vector<Vertex> cube_vertices = {
     //Top
-    {glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //0
-    {glm::vec3( 0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //1
-    {glm::vec3(-0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //2
-    {glm::vec3( 0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f)},  //3
+    {glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},  //0
+    {glm::vec3( 0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},  //1
+    {glm::vec3(-0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},  //2
+    {glm::vec3( 0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},  //3
 
     //Bottom
-    {glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //4
-    {glm::vec3( 0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //5
-    {glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //6
-    {glm::vec3( 0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f)}, //7
+    { glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f) }, //4
+    { glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f) }, //5
+    { glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f) }, //6
+    { glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, //7
 
     //Front
-    {glm::vec3(-0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //8
-    {glm::vec3( 0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //9
-    {glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //10
-    {glm::vec3( 0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f)}, //11
+    { glm::vec3(-0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) }, //8
+    { glm::vec3(0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) }, //9
+    { glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) }, //10
+    { glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)}, //11
 
     //Back
-    {glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //12
-    {glm::vec3( 0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //13
-    {glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //14
-    {glm::vec3( 0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f)}, //15
+    { glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(0.0f, 0.0f) }, //12
+    { glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f) }, //13
+    { glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(1.0f, 0.0f) }, //14
+    { glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f)}, //15
 
     //Left
-    {glm::vec3(-0.5f,  0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //16
-    {glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //17
-    {glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //18
-    {glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f)}, //19
+    { glm::vec3(-0.5f,  0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(0.0f, 0.0f) }, //16
+    { glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(0.0f, 1.0f) }, //17
+    { glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(1.0f, 0.0f) }, //18
+    { glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(1.0f, 1.0f)}, //19
 
     //Right
-    {glm::vec3(0.5f,  0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}, //20
-    {glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}, //21
-    {glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}, //22
-    {glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f)}  //23
+    { glm::vec3(0.5f,  0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(0.0f, 0.0f) }, //20
+    { glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(0.0f, 1.0f) }, //21
+    { glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(1.0f, 0.0f) }, //22
+    { glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(1.0f, 1.0f)}  //23
 };
 
 std::vector<u16> cube_indices = { 
@@ -122,13 +137,14 @@ std::vector<u16> cube_indices = {
     22, 23, 21 };
 // clang-format on
 
-pinut::resources::BufferHandle  plane_buffer_vertices;
-pinut::resources::BufferHandle  plane_buffer_indices;
-pinut::resources::BufferHandle  cube_buffer_vertices;
-pinut::resources::BufferHandle  cube_buffer_indices;
-pinut::resources::BufferHandle  global_ubo;
-pinut::resources::TextureHandle texture_handle;
-u32                             descriptor_set_id;
+pinut::resources::BufferHandle              plane_buffer_vertices;
+pinut::resources::BufferHandle              plane_buffer_indices;
+pinut::resources::BufferHandle              cube_buffer_vertices;
+pinut::resources::BufferHandle              cube_buffer_indices;
+pinut::resources::BufferHandle              global_ubo;
+pinut::resources::TextureHandle             texture_handle;
+pinut::resources::DescriptorSetHandle       descriptor_set_handle;
+pinut::resources::DescriptorSetLayoutHandle descriptor_set_layout_handle;
 
 using namespace pinut::resources;
 
@@ -176,6 +192,8 @@ bool RendererModule::start()
       {0, 0, offsetof(Vertex, position), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
       {1, 0, offsetof(Vertex, color), VertexInputFormatType::VEC3});
+    pipeline_descriptor.vertex_input.add_vertex_attribute(
+      {2, 0, offsetof(Vertex, uv), VertexInputFormatType::VEC2});
 
     // CREATING VERTEX AND INDEX BUFFER
     // CUBE
@@ -255,36 +273,57 @@ bool RendererModule::start()
     uniform_buffer_descriptor.size = sizeof(UniformBuffer);
     global_ubo                     = renderer->create_buffer(uniform_buffer_descriptor);
 
-    // CREATING DESCRIPTOR SET LAYOUTS
-    DescriptorSetBindingDescriptor binding = {0,
-                                              1,
-                                              ShaderStageType::VERTEX,
-                                              DescriptorType::UNIFORM};
-
-    DescriptorSetLayoutDescriptor descriptor_set_layout_descriptor = {};
-    descriptor_set_layout_descriptor.add_binding(&binding).add_name("GLOBAL");
-
-    const auto descriptor_set_layout_id =
-      renderer->create_descriptor_set_layout(descriptor_set_layout_descriptor);
-    pipeline_descriptor.add_descriptor_set_layout(descriptor_set_layout_id);
-
-    DescriptorSetDescriptor descriptor_set_descriptor = {};
-    descriptor_set_descriptor.set_layout(descriptor_set_layout_id).add_buffer({global_ubo}, 0);
-
-    descriptor_set_id = renderer->create_descriptor_set(descriptor_set_descriptor);
-
-    // TODO: Handle pipeline creation differently ...
-    // Data should be given from engine, not hardcoded in renderer.
-
-    u32               texture_data = 0xFFFFFFFF;
+    // Creating texture
+    u32               texture_data = 0xFF00FFFF;
     TextureDescriptor texture_descriptor{};
     texture_descriptor.width         = 1;
     texture_descriptor.height        = 1;
     texture_descriptor.channel_count = 4;
     texture_descriptor.data          = &texture_data;
 
-    texture_handle = renderer->create_texture(texture_descriptor);
+    i32      w, h, c;
+    stbi_uc* pixels =
+      stbi_load("../../Sogas/Sandbox/data/textures/carletus.png", &w, &h, &c, STBI_rgb_alpha);
 
+    TextureDescriptor alvar_nazi{};
+    alvar_nazi.width         = (u16)w;
+    alvar_nazi.height        = (u16)h;
+    alvar_nazi.channel_count = (u8)c;
+    alvar_nazi.data          = pixels;
+
+    texture_handle = renderer->create_texture(alvar_nazi);
+
+    stbi_image_free(pixels);
+
+    // CREATING DESCRIPTOR SET LAYOUTS
+    DescriptorSetBindingDescriptor binding = {0,
+                                              1,
+                                              ShaderStageType::VERTEX,
+                                              DescriptorType::UNIFORM};
+
+    DescriptorSetBindingDescriptor texture_binding = {1,
+                                                      1,
+                                                      ShaderStageType::FRAGMENT,
+                                                      DescriptorType::COMBINED_IMAGE_SAMPLER};
+
+    DescriptorSetLayoutDescriptor descriptor_set_layout_descriptor = {};
+    descriptor_set_layout_descriptor.add_binding(binding)
+      .add_binding(texture_binding)
+      .add_name("GLOBAL");
+
+    descriptor_set_layout_handle =
+      renderer->create_descriptor_set_layout(descriptor_set_layout_descriptor);
+    pipeline_descriptor.add_descriptor_set_layout(descriptor_set_layout_handle);
+
+    DescriptorSetDescriptor descriptor_set_descriptor = {};
+    descriptor_set_descriptor.set_layout(descriptor_set_layout_handle)
+      .add_buffer(global_ubo, 0)
+      .add_texture(texture_handle, 1);
+
+    descriptor_set_handle = renderer->create_descriptor_set(descriptor_set_descriptor);
+
+    // TODO: Handle pipeline creation differently ...
+    // Data should be given from engine, not hardcoded in renderer.
     renderer->create_pipeline(pipeline_descriptor);
 
     return true;
@@ -292,6 +331,8 @@ bool RendererModule::start()
 
 void RendererModule::stop()
 {
+    renderer->destroy_descriptor_set_layout(descriptor_set_layout_handle);
+    renderer->destroy_descriptor_set(descriptor_set_handle);
     renderer->destroy_texture(texture_handle);
     renderer->destroy_buffer(global_ubo);
     renderer->destroy_buffer(plane_buffer_indices);
@@ -315,8 +356,9 @@ void RendererModule::render()
 
     UniformBuffer ubo{};
     ubo.model =
-      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
-      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))  *
+      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))
+      ;
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
                            glm::vec3(0.0f, 0.0f, 0.0f),
                            glm::vec3(0.0f, 0.0f, 1.0f));
@@ -335,7 +377,7 @@ void RendererModule::render()
     cmd->set_scissors(nullptr);
     cmd->set_viewport(nullptr);
 
-    cmd->bind_descriptor_set(descriptor_set_id);
+    cmd->bind_descriptor_set(descriptor_set_handle);
     cmd->bind_vertex_buffer(cube_buffer_vertices, 0, 0);
     cmd->bind_index_buffer(cube_buffer_indices, BufferIndexType::UINT16);
 

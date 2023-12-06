@@ -81,8 +81,8 @@ struct VertexInputDescriptor
     // TODO At the moment just two, should not be hardcoded.
     u32             stream_count    = 0;
     u32             attribute_count = 0;
-    VertexStream    streams[2];
-    VertexAttribute attributes[2];
+    VertexStream    streams[8];
+    VertexAttribute attributes[8];
 
     VertexInputDescriptor& reset()
     {
@@ -94,7 +94,7 @@ struct VertexInputDescriptor
 
     VertexInputDescriptor& add_vertex_stream(const VertexStream& stream)
     {
-        ASSERT(stream_count < 2);
+        ASSERT(stream_count < 8);
 
         streams[stream_count++] = stream;
 
@@ -103,7 +103,7 @@ struct VertexInputDescriptor
 
     VertexInputDescriptor& add_vertex_attribute(const VertexAttribute& attribute)
     {
-        ASSERT(attribute_count < 2);
+        ASSERT(attribute_count < 8);
 
         attributes[attribute_count++] = attribute;
 
@@ -113,13 +113,14 @@ struct VertexInputDescriptor
 
 struct PipelineDescriptor
 {
-    const char*             name = nullptr;
-    ShaderStateDescriptor   shader_state;
-    RasterizationDescriptor rasterization;
-    VertexInputDescriptor   vertex_input;
-    ViewportDescriptor      viewport;
-    TopologyType            topology = TopologyType::TRIANGLE;
-    std::vector<u32>        descriptor_sets_ids;
+    const char*               name = nullptr;
+    ShaderStateDescriptor     shader_state;
+    RasterizationDescriptor   rasterization;
+    VertexInputDescriptor     vertex_input;
+    ViewportDescriptor        viewport;
+    TopologyType              topology = TopologyType::TRIANGLE;
+    DescriptorSetLayoutHandle descriptor_set_layouts[8];
+    u32                       layouts_count{0};
 
     PipelineDescriptor& add_name(const char* new_name)
     {
@@ -156,9 +157,9 @@ struct PipelineDescriptor
         return *this;
     }
 
-    PipelineDescriptor& add_descriptor_set_layout(const u32 new_descriptor_set_layout)
+    PipelineDescriptor& add_descriptor_set_layout(const DescriptorSetLayoutHandle& handle)
     {
-        descriptor_sets_ids.push_back(new_descriptor_set_layout);
+        descriptor_set_layouts[layouts_count++] = handle;
         return *this;
     }
 };

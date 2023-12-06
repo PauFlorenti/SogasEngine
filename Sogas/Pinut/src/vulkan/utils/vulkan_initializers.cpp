@@ -29,13 +29,15 @@ VkCommandBufferAllocateInfo command_buffer_allocate_info(VkCommandPool        po
     return info;
 }
 
-VkFramebufferCreateInfo framebuffer_create_info(VkRenderPass renderpass, VkExtent2D extent)
+VkFramebufferCreateInfo framebuffer_create_info(VkRenderPass renderpass,
+                                                VkExtent2D   extent,
+                                                const u32    attachment_count)
 {
     VkFramebufferCreateInfo info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
     info.renderPass              = renderpass;
     info.width                   = extent.width;
     info.height                  = extent.height;
-    info.attachmentCount         = 1;
+    info.attachmentCount         = attachment_count;
     info.layers                  = 1;
 
     return info;

@@ -236,5 +236,320 @@ VkIndexType get_buffer_index_type(resources::BufferIndexType index_type)
             break;
     }
 }
+VkFormat get_texture_format(resources::TextureFormat format)
+{
+    switch (format)
+    {
+        case pinut::resources::TextureFormat::UNDEFINED:
+            return VK_FORMAT_UNDEFINED;
+            break;
+        case pinut::resources::TextureFormat::R8_UNORM:
+            return VK_FORMAT_R8_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R8_SNORM:
+            return VK_FORMAT_R8_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R8_USCALED:
+            return VK_FORMAT_R8_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R8_SSCALED:
+            return VK_FORMAT_R8_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R8_UINT:
+            return VK_FORMAT_R8_UINT;
+            break;
+        case pinut::resources::TextureFormat::R8_SINT:
+            return VK_FORMAT_R8_SINT;
+            break;
+        case pinut::resources::TextureFormat::R8_SRGB:
+            return VK_FORMAT_R8_SRGB;
+            break;
+        case pinut::resources::TextureFormat::R8G8_UNORM:
+            return VK_FORMAT_R8G8_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R8G8_SNORM:
+            return VK_FORMAT_R8G8_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R8G8_USCALED:
+            return VK_FORMAT_R8G8_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R8G8_SSCALED:
+            return VK_FORMAT_R8G8_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R8G8_UINT:
+            return VK_FORMAT_R8G8_UINT;
+            break;
+        case pinut::resources::TextureFormat::R8G8_SINT:
+            return VK_FORMAT_R8G8_SINT;
+            break;
+        case pinut::resources::TextureFormat::R8G8_SRGB:
+            return VK_FORMAT_R8G8_SRGB;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_UNORM:
+            return VK_FORMAT_R8G8B8_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_SNORM:
+            return VK_FORMAT_R8G8B8_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_USCALED:
+            return VK_FORMAT_R8G8B8_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_SSCALED:
+            return VK_FORMAT_R8G8B8_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_UINT:
+            return VK_FORMAT_R8G8B8_UINT;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_SINT:
+            return VK_FORMAT_R8G8B8_SINT;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8_SRGB:
+            return VK_FORMAT_R8G8B8_SRGB;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_SNORM:
+            return VK_FORMAT_R8G8B8A8_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_USCALED:
+            return VK_FORMAT_R8G8B8A8_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_SSCALED:
+            return VK_FORMAT_R8G8B8A8_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_UINT:
+            return VK_FORMAT_R8G8B8A8_UINT;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_SINT:
+            return VK_FORMAT_R8G8B8A8_SINT;
+            break;
+        case pinut::resources::TextureFormat::R8G8B8A8_SRGB:
+            return VK_FORMAT_R8G8B8A8_SRGB;
+            break;
+        case pinut::resources::TextureFormat::R16_UNORM:
+            return VK_FORMAT_R16_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R16_SNORM:
+            return VK_FORMAT_R16_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R16_USCALED:
+            return VK_FORMAT_R16_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R16_SSCALED:
+            return VK_FORMAT_R16_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R16_UINT:
+            return VK_FORMAT_R16_UINT;
+            break;
+        case pinut::resources::TextureFormat::R16_SINT:
+            return VK_FORMAT_R16_SINT;
+            break;
+        case pinut::resources::TextureFormat::R16_SFLOAT:
+            return VK_FORMAT_R16_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R16G16_UNORM:
+            return VK_FORMAT_R16G16_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R16G16_SNORM:
+            return VK_FORMAT_R16G16_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R16G16_USCALED:
+            return VK_FORMAT_R16G16_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R16G16_SSCALED:
+            return VK_FORMAT_R16G16_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R16G16_UINT:
+            return VK_FORMAT_R16G16_UINT;
+            break;
+        case pinut::resources::TextureFormat::R16G16_SINT:
+            return VK_FORMAT_R16G16_SINT;
+            break;
+        case pinut::resources::TextureFormat::R16G16_SFLOAT:
+            return VK_FORMAT_R16G16_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_UNORM:
+            return VK_FORMAT_R16G16B16_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_SNORM:
+            return VK_FORMAT_R16G16B16_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_USCALED:
+            return VK_FORMAT_R16G16B16_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_SSCALED:
+            return VK_FORMAT_R16G16B16_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_UINT:
+            return VK_FORMAT_R16G16B16_UINT;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_SINT:
+            return VK_FORMAT_R16G16B16_SINT;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16_SFLOAT:
+            return VK_FORMAT_R16G16B16_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_UNORM:
+            return VK_FORMAT_R16G16B16A16_UNORM;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_SNORM:
+            return VK_FORMAT_R16G16B16A16_SNORM;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_USCALED:
+            return VK_FORMAT_R16G16B16A16_USCALED;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_SSCALED:
+            return VK_FORMAT_R16G16B16A16_SSCALED;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_UINT:
+            return VK_FORMAT_R16G16B16A16_UINT;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_SINT:
+            return VK_FORMAT_R16G16B16A16_SINT;
+            break;
+        case pinut::resources::TextureFormat::R16G16B16A16_SFLOAT:
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R32_UINT:
+            return VK_FORMAT_R32_UINT;
+            break;
+        case pinut::resources::TextureFormat::R32_SINT:
+            return VK_FORMAT_R32_SINT;
+            break;
+        case pinut::resources::TextureFormat::R32_SFLOAT:
+            return VK_FORMAT_R32_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R32G32_UINT:
+            return VK_FORMAT_R32G32_UINT;
+            break;
+        case pinut::resources::TextureFormat::R32G32_SINT:
+            return VK_FORMAT_R32G32_SINT;
+            break;
+        case pinut::resources::TextureFormat::R32G32_SFLOAT:
+            return VK_FORMAT_R32G32_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R32G32B32_UINT:
+            return VK_FORMAT_R32G32B32_UINT;
+            break;
+        case pinut::resources::TextureFormat::R32G32B32_SINT:
+            return VK_FORMAT_R32G32B32_SINT;
+            break;
+        case pinut::resources::TextureFormat::R32G32B32_SFLOAT:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R32G32B32A32_UINT:
+            return VK_FORMAT_R32G32B32A32_UINT;
+            break;
+        case pinut::resources::TextureFormat::R32G32B32A32_SINT:
+            return VK_FORMAT_R32G32B32A32_SINT;
+            break;
+        case pinut::resources::TextureFormat::R32G32B32A32_SFLOAT:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R64_UINT:
+            return VK_FORMAT_R64_UINT;
+            break;
+        case pinut::resources::TextureFormat::R64_SINT:
+            return VK_FORMAT_R64_SINT;
+            break;
+        case pinut::resources::TextureFormat::R64_SFLOAT:
+            return VK_FORMAT_R64_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R64G64_UINT:
+            return VK_FORMAT_R64G64_UINT;
+            break;
+        case pinut::resources::TextureFormat::R64G64_SINT:
+            return VK_FORMAT_R64G64_SINT;
+            break;
+        case pinut::resources::TextureFormat::R64G64_SFLOAT:
+            return VK_FORMAT_R64G64_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R64G64B64_UINT:
+            return VK_FORMAT_R64G64B64_UINT;
+            break;
+        case pinut::resources::TextureFormat::R64G64B64_SINT:
+            return VK_FORMAT_R64G64B64_SINT;
+            break;
+        case pinut::resources::TextureFormat::R64G64B64_SFLOAT:
+            return VK_FORMAT_R64G64B64_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::R64G64B64A64_UINT:
+            return VK_FORMAT_R64G64B64A64_UINT;
+            break;
+        case pinut::resources::TextureFormat::R64G64B64A64_SINT:
+            return VK_FORMAT_R64G64B64A64_SINT;
+            break;
+        case pinut::resources::TextureFormat::R64G64B64A64_SFLOAT:
+            return VK_FORMAT_R64G64B64A64_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::D32_SFLOAT:
+            return VK_FORMAT_D32_SFLOAT;
+            break;
+        case pinut::resources::TextureFormat::D16_UNORM_S8_UINT:
+            return VK_FORMAT_D16_UNORM_S8_UINT;
+            break;
+        case pinut::resources::TextureFormat::D24_UNORM_S8_UINT:
+            return VK_FORMAT_D24_UNORM_S8_UINT;
+            break;
+        case pinut::resources::TextureFormat::D32_SFLOAT_S8_UINT:
+            return VK_FORMAT_D32_SFLOAT_S8_UINT;
+            break;
+        default:
+        case pinut::resources::TextureFormat::COUNT:
+            return VK_FORMAT_UNDEFINED;
+            break;
+    }
+}
+VkImageType get_texture_type(resources::TextureType type)
+{
+    switch (type)
+    {
+        case pinut::resources::TextureType::TEXTURE_1D:
+            return VK_IMAGE_TYPE_1D;
+            break;
+        default:
+        case pinut::resources::TextureType::TEXTURE_2D:
+            return VK_IMAGE_TYPE_2D;
+            break;
+        case pinut::resources::TextureType::TEXTURE_3D:
+            return VK_IMAGE_TYPE_3D;
+            break;
+        case pinut::resources::TextureType::COUNT:
+            return VK_IMAGE_TYPE_MAX_ENUM;
+            break;
+    }
+}
+VkImageViewType get_texture_view_type(resources::TextureViewType type)
+{
+    switch (type)
+    {
+        case pinut::resources::TextureViewType::TEXTURE_1D:
+            return VK_IMAGE_VIEW_TYPE_1D;
+            break;
+        case pinut::resources::TextureViewType::TEXTURE_2D:
+            return VK_IMAGE_VIEW_TYPE_2D;
+            break;
+        case pinut::resources::TextureViewType::TEXTURE_3D:
+            return VK_IMAGE_VIEW_TYPE_3D;
+            break;
+        case pinut::resources::TextureViewType::TEXTURE_1D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+            break;
+        case pinut::resources::TextureViewType::TEXTURE_2D_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            break;
+        case pinut::resources::TextureViewType::TEXTURE_CUBE:
+            return VK_IMAGE_VIEW_TYPE_CUBE;
+            break;
+        case pinut::resources::TextureViewType::TEXTURE_CUBE_ARRAY:
+            return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            break;
+        default:
+        case pinut::resources::TextureViewType::COUNT:
+            return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+            break;
+    }
+}
 } // namespace vulkan
 } // namespace pinut

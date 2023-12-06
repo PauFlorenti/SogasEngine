@@ -27,10 +27,22 @@ struct RenderPassHandle
     ResourceHandle id;
 };
 
-static const BufferHandle      invalid_buffer{INVALID_ID};
-static const TextureHandle     invalid_texture{INVALID_ID};
-static const ShaderStateHandle invalid_shader_state{INVALID_ID};
-static const RenderPassHandle  invalid_render_pass{INVALID_ID};
+struct DescriptorSetHandle
+{
+    ResourceHandle id;
+};
+
+struct DescriptorSetLayoutHandle
+{
+    ResourceHandle id;
+};
+
+static const BufferHandle              invalid_buffer{INVALID_ID};
+static const TextureHandle             invalid_texture{INVALID_ID};
+static const ShaderStateHandle         invalid_shader_state{INVALID_ID};
+static const RenderPassHandle          invalid_render_pass{INVALID_ID};
+static const DescriptorSetHandle       invalid_descriptor_set{INVALID_ID};
+static const DescriptorSetLayoutHandle invalid_descriptor_set_layout{INVALID_ID};
 
 enum class VertexInputFormatType
 {

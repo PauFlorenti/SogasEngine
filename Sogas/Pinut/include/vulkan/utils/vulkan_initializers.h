@@ -16,7 +16,9 @@ VkCommandBufferAllocateInfo command_buffer_allocate_info(
   u32                  count = 1,
   VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-VkFramebufferCreateInfo framebuffer_create_info(VkRenderPass renderpass, VkExtent2D extent);
+VkFramebufferCreateInfo framebuffer_create_info(VkRenderPass renderpass,
+                                                VkExtent2D   extent,
+                                                const u32    attachment_count = 1);
 
 VkFenceCreateInfo fence_create_info(VkFenceCreateFlags flags = 0);
 

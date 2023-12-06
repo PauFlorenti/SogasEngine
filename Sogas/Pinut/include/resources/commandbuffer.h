@@ -30,11 +30,11 @@ class CommandBuffer
                               u32 instance_count,
                               u32 vertex_offset) = 0;
 
-    virtual void bind_descriptor_set(const u32 descriptor_set_id)         = 0;
-    virtual void bind_vertex_buffer(const BufferHandle handle,
-                                    const u32          binding,
-                                    const u32          offset)                     = 0;
-    virtual void bind_index_buffer(const BufferHandle         handle,
+    virtual void bind_descriptor_set(const DescriptorSetHandle& handle)   = 0;
+    virtual void bind_vertex_buffer(const BufferHandle& handle,
+                                    const u32           binding,
+                                    const u32           offset)                     = 0;
+    virtual void bind_index_buffer(const BufferHandle&        handle,
                                    resources::BufferIndexType index_type) = 0;
 
     GPUDevice* device = nullptr;

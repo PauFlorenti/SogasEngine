@@ -3,6 +3,7 @@
 #include <render_device.h>
 #include <resources/commandbuffer.h>
 #include <resources/resource_pool.h>
+#include <resources/resources.h>
 #include <resources/shader_state.h>
 #include <vulkan/utils/vulkan_commandbuffer.h>
 #include <vulkan/utils/vulkan_pipeline_builder.h>
@@ -32,8 +33,23 @@ struct VulkanTexture
 {
     VkImage        image;
     VkImageView    image_view;
+    VkFormat       format;
     VkSampler      sampler;
     VkDeviceMemory memory;
+};
+
+struct VulkanDescriptorSet
+{
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+};
+
+struct VulkanDescriptorSetLayout
+{
+    VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+
+    resources::DescriptorSetBindingDescriptor* bindings             = nullptr;
+    u16                                        bindings_count       = 0;
+    u8                                         descriptor_set_index = 0;
 };
 
 class VulkanDevice : public GPUDevice
@@ -51,9 +67,10 @@ class VulkanDevice : public GPUDevice
       const resources::TextureDescriptor& descriptor) override;
     resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) override;
-    const u32 create_descriptor_set_layout(
+    resources::DescriptorSetLayoutHandle create_descriptor_set_layout(
       const resources::DescriptorSetLayoutDescriptor& descriptor) override;
-    const u32 create_descriptor_set(const resources::DescriptorSetDescriptor& descriptor) override;
+    resources::DescriptorSetHandle create_descriptor_set(
+      const resources::DescriptorSetDescriptor& descriptor) override;
 
     // TODO should return a handle for future references outside.
     void create_pipeline(const resources::PipelineDescriptor& descriptor) override;
@@ -72,17 +89,23 @@ class VulkanDevice : public GPUDevice
                      const u32                     src_offset = 0,
                      const u32                     dst_offset = 0) override;
 
+    void copy_buffer_to_image(const resources::BufferHandle  buffer_handle,
+                              const resources::TextureHandle texture_handle,
+                              const u32                      width,
+                              const u32                      height) override;
+
     void destroy_buffer(resources::BufferHandle handle) override;
     void destroy_texture(resources::TextureHandle handle) override;
+    void destroy_descriptor_set(resources::DescriptorSetHandle handle) override;
+    void destroy_descriptor_set_layout(resources::DescriptorSetLayoutHandle handle) override;
 
     static std::map<std::string, VulkanShaderState> shaders;
     static std::map<std::string, VulkanPipeline>    pipelines;
     static std::map<std::string, VulkanRenderPass>  render_passes;
-    static std::map<u32, VkDescriptorSetLayout>     descriptor_set_layouts;
-    static std::map<u32, VkDescriptorSet>           descriptor_sets;
 
     static const u32 MAX_SWAPCHAIN_IMAGES = 3;
 
+    VkDevice      device = VK_NULL_HANDLE;
     VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
     u32           swapchain_index = 0;
     u32           current_frame   = 0;
@@ -98,8 +121,11 @@ class VulkanDevice : public GPUDevice
     };
 
     // Access resources
-    VulkanBuffer*  access_buffer(resources::BufferHandle handle);
-    VulkanTexture* access_texture(resources::TextureHandle handle);
+    VulkanBuffer*              access_buffer(resources::BufferHandle handle);
+    VulkanTexture*             access_texture(resources::TextureHandle handle);
+    VulkanDescriptorSet*       access_descriptor_set(resources::DescriptorSetHandle handle);
+    VulkanDescriptorSetLayout* access_descriptor_set_layout(
+      resources::DescriptorSetLayoutHandle handle);
 
   private:
     bool                                 create_instance();
@@ -116,6 +142,9 @@ class VulkanDevice : public GPUDevice
     void destroy_swapchain();
     void recreate_swapchain();
 
+    VkCommandBuffer begin_single_use_command_buffer();
+    void            end_single_use_command_buffer(VkCommandBuffer cmd);
+
     // internals
     void create_vulkan_buffer(const u32             size,
                               VkBufferUsageFlags    usage_flags,
@@ -126,13 +155,13 @@ class VulkanDevice : public GPUDevice
     void* window_handle = nullptr;
 
     // Basic initialization handles
-    VkDevice         device          = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkInstance       vulkan_instance = VK_NULL_HANDLE;
     VkSurfaceKHR     vulkan_surface  = VK_NULL_HANDLE;
 
     VkPhysicalDeviceProperties           physical_device_properties;
     VkPhysicalDeviceMemoryProperties     physical_device_memory_properties;
+    VkFormatProperties                   physical_device_format_properties;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 
     VkExtent2D extent{512, 512};
@@ -153,13 +182,19 @@ class VulkanDevice : public GPUDevice
 
     std::vector<VkImage>     swapchain_images;
     std::vector<VkImageView> swapchain_image_views;
+    resources::TextureHandle depth_texture;
+    VkFormat                 depth_texture_format;
 
     VulkanCommandBuffer command_buffers[MAX_SWAPCHAIN_IMAGES];
 
     VkDescriptorPool descriptor_pool;
 
+    static const u16 DEFAULT_RESOURCES_COUNT = 128;
+
     resources::ResourcePool buffers;
     resources::ResourcePool textures;
+    resources::ResourcePool descriptor_sets;
+    resources::ResourcePool descriptor_set_layouts;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;

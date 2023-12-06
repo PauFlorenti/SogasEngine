@@ -86,44 +86,59 @@ struct DescriptorSetLayoutDescriptor
         return *this;
     }
 
-    DescriptorSetLayoutDescriptor& add_binding(const DescriptorSetBindingDescriptor* new_binding)
+    DescriptorSetLayoutDescriptor& add_binding(const DescriptorSetBindingDescriptor& binding)
     {
-        bindings[binding_count++] = *new_binding;
+        bindings[binding_count++] = binding;
         return *this;
     }
 };
 
+static const u8 MAX_DESCRIPTOR_PER_SET = 16;
+
 struct DescriptorSetDescriptor
 {
     // TODO At the moment only one buffer. Multiple resources per set in the future.
-    BufferHandle buffer  = {INVALID_ID};
-    u32          binding = INVALID_ID;
+    //SamplerHandle  samplers[MAX_DESCRIPTOR_PER_SET];
+    ResourceHandle resources[MAX_DESCRIPTOR_PER_SET];
+    u16            bindings[MAX_DESCRIPTOR_PER_SET];
+    u16            resources_used{0};
 
-    u32 layout_id = INVALID_ID;
+    DescriptorSetLayoutHandle layout_handle = {INVALID_ID};
 
     std::string name;
 
     DescriptorSetDescriptor& reset()
     {
-        buffer  = {INVALID_ID};
-        binding = INVALID_ID;
-        name    = "";
+        resources_used = 0;
+        name           = "";
         return *this;
     }
 
-    DescriptorSetDescriptor& set_layout(const u32 new_layout_id)
+    DescriptorSetDescriptor& set_layout(const DescriptorSetLayoutHandle new_layout_handle)
     {
-        ASSERT(new_layout_id != INVALID_ID);
-        layout_id = new_layout_id;
+        ASSERT(new_layout_handle.id != INVALID_ID);
+        layout_handle = new_layout_handle;
         return *this;
     }
 
-    DescriptorSetDescriptor& add_buffer(const BufferHandle& new_buffer, const u16 new_binding)
+    DescriptorSetDescriptor& add_buffer(const BufferHandle& buffer, const u16 binding)
     {
-        ASSERT(new_buffer.id != INVALID_ID);
+        ASSERT(buffer.id != INVALID_ID);
 
-        buffer.id = new_buffer.id;
-        binding   = static_cast<u32>(new_binding);
+        // TODO Samplers
+        bindings[resources_used]    = binding;
+        resources[resources_used++] = buffer.id;
+        return *this;
+    }
+
+    DescriptorSetDescriptor& add_texture(const TextureHandle& texture, const u16 binding)
+    {
+        // TODO Add sampler to be used.
+        ASSERT(texture.id != INVALID_ID);
+
+        bindings[resources_used]    = binding;
+        resources[resources_used++] = texture.id;
+
         return *this;
     }
 

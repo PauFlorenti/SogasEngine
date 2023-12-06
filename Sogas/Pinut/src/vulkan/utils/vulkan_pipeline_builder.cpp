@@ -31,10 +31,12 @@ namespace pinut
 {
 namespace vulkan
 {
-bool VulkanPipeline::build_pipeline(VkDevice                             device,
+bool VulkanPipeline::build_pipeline(VulkanDevice*                        device,
                                     const resources::PipelineDescriptor* descriptor,
                                     VkRenderPass                         render_pass)
 {
+    ASSERT(device != nullptr);
+
     VulkanShaderState pipeline_shader_stages_info;
     if (VulkanDevice::shaders.contains(descriptor->shader_state.name))
     {
@@ -56,7 +58,7 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
 
             const auto&    shader_stage = descriptor->shader_state.shader_stages[i];
             VkShaderModule module;
-            if (!create_shader_module(device, shader_stage, module))
+            if (!create_shader_module(device->device, shader_stage, module))
             {
                 PERROR("Failed to create shader module!");
                 return false;
@@ -148,6 +150,14 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
         vertex_input_info.pVertexBindingDescriptions    = nullptr;
     }
 
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    depth_stencil_info.depthTestEnable       = VK_TRUE;
+    depth_stencil_info.depthWriteEnable      = VK_TRUE;
+    depth_stencil_info.depthCompareOp        = VK_COMPARE_OP_LESS;
+    depth_stencil_info.depthBoundsTestEnable = VK_FALSE;
+    depth_stencil_info.stencilTestEnable     = VK_FALSE;
+
     VkPipelineMultisampleStateCreateInfo multisampling_info = {
       VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     multisampling_info.sampleShadingEnable   = VK_FALSE;
@@ -199,28 +209,25 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
 
     VulkanPipeline pipeline;
 
-    std::vector<VkDescriptorSetLayout> descriptor_set_layouts(
-      descriptor->descriptor_sets_ids.size());
+    VkDescriptorSetLayout descriptor_set_layouts[8];
 
-    for (u32 i = 0; i < descriptor->descriptor_sets_ids.size(); ++i)
+    for (u32 i = 0; i < descriptor->layouts_count; ++i)
     {
-        const auto it = VulkanDevice::descriptor_set_layouts.find(descriptor->descriptor_sets_ids.at(i));
+        const auto layout =
+          device->access_descriptor_set_layout(descriptor->descriptor_set_layouts[i]);
 
-        if (it == VulkanDevice::descriptor_set_layouts.end())
-        {
-            throw std::runtime_error("Error accessing non existant descriptor set.");
-        }
-
-        descriptor_set_layouts.at(i) = it->second;
+        descriptor_set_layouts[i] = layout->layout;
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-    pipeline_layout_info.setLayoutCount = static_cast<u32>(descriptor_set_layouts.size());
-    pipeline_layout_info.pSetLayouts    = descriptor_set_layouts.data();
+    pipeline_layout_info.setLayoutCount = descriptor->layouts_count;
+    pipeline_layout_info.pSetLayouts    = descriptor_set_layouts;
 
-    VK_CHECK(
-      vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline.pipeline_layout));
+    VK_CHECK(vkCreatePipelineLayout(device->device,
+                                    &pipeline_layout_info,
+                                    nullptr,
+                                    &pipeline.pipeline_layout));
 
     VkGraphicsPipelineCreateInfo info = {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
     info.stageCount                   = static_cast<u32>(pipeline_shader_stages_info.size());
@@ -229,6 +236,7 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
     info.pInputAssemblyState          = &assembly_info;
     info.pViewportState               = &viewport_info;
     info.pRasterizationState          = &rasterization_info;
+    info.pDepthStencilState           = &depth_stencil_info;
     info.pMultisampleState            = &multisampling_info;
     info.pColorBlendState             = &color_blend_info;
     info.layout                       = pipeline.pipeline_layout;
@@ -237,8 +245,12 @@ bool VulkanPipeline::build_pipeline(VkDevice                             device,
     info.pDynamicState                = &dynamic_state_info;
     info.basePipelineHandle           = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &info, nullptr, &pipeline.pipeline) !=
-        VK_SUCCESS)
+    if (vkCreateGraphicsPipelines(device->device,
+                                  VK_NULL_HANDLE,
+                                  1,
+                                  &info,
+                                  nullptr,
+                                  &pipeline.pipeline) != VK_SUCCESS)
     {
         PERROR("Failed to create pipeline");
         return false;

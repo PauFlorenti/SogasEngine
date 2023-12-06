@@ -37,9 +37,9 @@ class GPUDevice
       const resources::TextureDescriptor& descriptor) = 0;
     virtual resources::RenderPassHandle create_renderpass(
       const resources::RenderPassDescriptor& descriptor) = 0;
-    virtual const u32 create_descriptor_set_layout(
+    virtual resources::DescriptorSetLayoutHandle create_descriptor_set_layout(
       const resources::DescriptorSetLayoutDescriptor& descriptor) = 0;
-    virtual const u32 create_descriptor_set(
+    virtual resources::DescriptorSetHandle create_descriptor_set(
       const resources::DescriptorSetDescriptor& descriptor) = 0;
 
     // TODO return handle for future reference outside backend.
@@ -57,9 +57,15 @@ class GPUDevice
                              const resources::BufferHandle dst_buffer_id,
                              const u32                     size,
                              const u32                     src_offset = 0,
-                             const u32                     dst_offset = 0) = 0;
+                             const u32                     dst_offset = 0)  = 0;
+    virtual void copy_buffer_to_image(const resources::BufferHandle  buffer_handle,
+                                      const resources::TextureHandle texture_handle,
+                                      const u32                      width,
+                                      const u32                      height) = 0;
 
-    virtual void destroy_buffer(resources::BufferHandle handle)   = 0;
-    virtual void destroy_texture(resources::TextureHandle handle) = 0;
+    virtual void destroy_buffer(resources::BufferHandle handle)                             = 0;
+    virtual void destroy_texture(resources::TextureHandle handle)                           = 0;
+    virtual void destroy_descriptor_set(resources::DescriptorSetHandle handle)              = 0;
+    virtual void destroy_descriptor_set_layout(resources::DescriptorSetLayoutHandle handle) = 0;
 };
 } // namespace pinut

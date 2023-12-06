@@ -10,10 +10,11 @@ struct PipelineDescriptor;
 }
 namespace vulkan
 {
+class VulkanDevice;
 class VulkanPipeline
 {
   public:
-    static bool build_pipeline(VkDevice                             device,
+    static bool build_pipeline(VulkanDevice*                        device,
                                const resources::PipelineDescriptor* descriptor,
                                VkRenderPass                         render_pass);
 

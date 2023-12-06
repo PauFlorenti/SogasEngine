@@ -26,18 +26,18 @@ class VulkanCommandBuffer : public resources::CommandBuffer
                       u32 instance_count,
                       u32 vertex_offset) override;
 
-    void bind_descriptor_set(const u32 descriptor_set_id) override;
+    void bind_descriptor_set(const resources::DescriptorSetHandle& handle) override;
 
-    void bind_vertex_buffer(const resources::BufferHandle handle,
-                            const u32                     binding,
-                            const u32                     offset) override;
-    void bind_index_buffer(const resources::BufferHandle handle,
-                           resources::BufferIndexType    index_type) override;
+    void bind_vertex_buffer(const resources::BufferHandle& handle,
+                            const u32                      binding,
+                            const u32                      offset) override;
+    void bind_index_buffer(const resources::BufferHandle& handle,
+                           resources::BufferIndexType     index_type) override;
 
     VkCommandBuffer cmd = VK_NULL_HANDLE;
 
   private:
-    VkClearValue     clear_value;
+    VkClearValue     clear_values[2];
     VkPipelineLayout current_pipeline_layout;
 };
 } // namespace vulkan
