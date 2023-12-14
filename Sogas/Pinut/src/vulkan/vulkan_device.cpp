@@ -349,8 +349,7 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
 
     VulkanDevice::render_passes.insert({"Swapchain_renderpass", vulkan_renderpass});
 
-    VkFramebufferCreateInfo framebuffer_info =
-      vkinit::framebuffer_create_info(render_pass, extent);
+    VkFramebufferCreateInfo framebuffer_info = vkinit::framebuffer_create_info(render_pass, extent);
 
     const u32 swapchain_images_size = static_cast<u32>(swapchain_images.size());
 
@@ -462,7 +461,7 @@ resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescr
         return handle;
     }
 
-    VulkanBuffer* buffer = access_buffer(handle);
+    auto buffer = access_buffer(handle);
 
     VkBufferUsageFlags    usage_flags  = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
     VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
@@ -632,8 +631,14 @@ resources::DescriptorSetLayoutHandle VulkanDevice::create_descriptor_set_layout(
 
     descriptor_set_layout->bindings = (resources::DescriptorSetBindingDescriptor*)malloc(
       sizeof(resources::DescriptorSetBindingDescriptor) * descriptor.binding_count);
+
+    if (!descriptor_set_layout->bindings)
+    {
+        throw std::runtime_error("Not enough memory for bindings.");
+    }
+
     memset(descriptor_set_layout->bindings,
-           0,
+           {},
            sizeof(resources::DescriptorSetBindingDescriptor) * descriptor.binding_count);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(descriptor.binding_count);
@@ -685,7 +690,10 @@ resources::DescriptorSetHandle VulkanDevice::create_descriptor_set(
 
     VK_CHECK(vkAllocateDescriptorSets(device, &info, &descriptor_set->descriptor_set));
 
-    VkWriteDescriptorSet write[8];
+    // TODO Why 8??
+    VkWriteDescriptorSet   write[8]       = {};
+    VkDescriptorImageInfo  image_info[8]  = {};
+    VkDescriptorBufferInfo buffer_info[8] = {};
 
     for (u32 i = 0; i < descriptor.resources_used; ++i)
     {
@@ -698,20 +706,19 @@ resources::DescriptorSetHandle VulkanDevice::create_descriptor_set(
         write[i].dstBinding      = binding->binding;
         write[i].dstArrayElement = 0;
 
-        switch (layout->bindings[i].descriptor_type)
+        switch (binding->descriptor_type)
         {
             case resources::DescriptorType::COMBINED_IMAGE_SAMPLER:
             {
                 resources::TextureHandle texture_handle{descriptor.resources[i]};
                 const auto               texture = access_texture(texture_handle);
 
-                VkDescriptorImageInfo image_info{};
-                image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                image_info.imageView   = texture->image_view;
-                image_info.sampler     = texture->sampler;
+                image_info[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                image_info[i].imageView   = texture->image_view;
+                image_info[i].sampler     = texture->sampler;
 
                 write[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                write[i].pImageInfo     = &image_info;
+                write[i].pImageInfo     = &image_info[i];
                 break;
             }
             case resources::DescriptorType::UNIFORM:
@@ -720,13 +727,12 @@ resources::DescriptorSetHandle VulkanDevice::create_descriptor_set(
                 const auto              buffer = access_buffer(buffer_handle);
                 ASSERT(buffer != nullptr);
 
-                VkDescriptorBufferInfo buffer_info = {};
-                buffer_info.buffer                 = buffer->buffer;
-                buffer_info.range                  = VK_WHOLE_SIZE;
-                buffer_info.offset                 = 0;
+                buffer_info[i].buffer = buffer->buffer;
+                buffer_info[i].range  = VK_WHOLE_SIZE;
+                buffer_info[i].offset = 0;
 
                 write[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                write[i].pBufferInfo    = &buffer_info;
+                write[i].pBufferInfo    = &buffer_info[i];
                 break;
             }
             default:
@@ -746,8 +752,10 @@ void VulkanDevice::begin_frame()
 
 void VulkanDevice::create_pipeline(const resources::PipelineDescriptor& descriptor)
 {
-    ASSERT(VulkanPipeline::build_pipeline(this, &descriptor, render_pass) == true);
-    UNUSED(descriptor); // For release version.
+    if (VulkanPipeline::build_pipeline(this, &descriptor, render_pass) != true)
+    {
+        throw std::runtime_error("Failed to create pipeline");
+    }
 }
 
 void VulkanDevice::end_frame()

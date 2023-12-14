@@ -97,7 +97,7 @@ static const u8 MAX_DESCRIPTOR_PER_SET = 16;
 
 struct DescriptorSetDescriptor
 {
-    // TODO At the moment only one buffer. Multiple resources per set in the future.
+    // TODO Add samplers resources.
     //SamplerHandle  samplers[MAX_DESCRIPTOR_PER_SET];
     ResourceHandle resources[MAX_DESCRIPTOR_PER_SET];
     u16            bindings[MAX_DESCRIPTOR_PER_SET];

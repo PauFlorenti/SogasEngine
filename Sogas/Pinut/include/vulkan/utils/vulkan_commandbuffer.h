@@ -37,8 +37,8 @@ class VulkanCommandBuffer : public resources::CommandBuffer
     VkCommandBuffer cmd = VK_NULL_HANDLE;
 
   private:
-    VkClearValue     clear_values[2];
-    VkPipelineLayout current_pipeline_layout;
+    VkClearValue     clear_values[2]         = {{0.0f}, {1.0f, 0}};
+    VkPipelineLayout current_pipeline_layout = VK_NULL_HANDLE;
 };
 } // namespace vulkan
 } // namespace pinut

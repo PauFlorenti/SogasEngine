@@ -8,20 +8,20 @@ namespace vulkan
 {
 struct SwapchainSupportDetails
 {
-    VkSurfaceCapabilitiesKHR        surface_capabilities;
+    VkSurfaceCapabilitiesKHR        surface_capabilities{};
     std::vector<VkSurfaceFormatKHR> surface_formats;
     std::vector<VkPresentModeKHR>   surface_present_modes;
 };
 
 struct Swapchain
 {
-    VkDevice                 device    = VK_NULL_HANDLE;
-    VkSwapchainKHR           swapchain = VK_NULL_HANDLE;
-    VkExtent2D               extent    = {0, 0};
-    u32                      image_count;
-    VkSurfaceFormatKHR       surface_format;
-    VkPresentModeKHR         present_mode;
-    VkSurfaceFormatKHR       format_surface;
+    VkDevice                 device      = VK_NULL_HANDLE;
+    VkSwapchainKHR           swapchain   = VK_NULL_HANDLE;
+    VkExtent2D               extent      = {0, 0};
+    u32                      image_count = 0;
+    VkSurfaceFormatKHR       surface_format{};
+    VkPresentModeKHR         present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
+    VkSurfaceFormatKHR       format_surface{};
     std::vector<VkImage>     images;
     std::vector<VkImageView> image_views;
 

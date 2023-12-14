@@ -105,10 +105,10 @@ class VulkanDevice : public GPUDevice
 
     static const u32 MAX_SWAPCHAIN_IMAGES = 3;
 
-    VkDevice      device = VK_NULL_HANDLE;
-    VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
-    u32           swapchain_index = 0;
-    u32           current_frame   = 0;
+    VkDevice      device                             = VK_NULL_HANDLE;
+    VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES] = {VK_NULL_HANDLE};
+    u32           swapchain_index                    = 0;
+    u32           current_frame                      = 0;
 
     VkExtent2D get_swapchain_extent() const
     {

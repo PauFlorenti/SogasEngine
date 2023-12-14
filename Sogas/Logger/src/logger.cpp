@@ -13,7 +13,7 @@ static i32 string_format(char* dest, const char* format, va_list va_args)
         char       buffer[char_buffer_size];
         const auto number_written =
           _vsnprintf_s(buffer, sizeof(buffer), (size_t)char_buffer_size, format, va_args);
-        memcpy(dest, buffer, number_written + 1);
+        memcpy(dest, buffer, static_cast<u64>(number_written) + 1);
         return number_written;
     }
 

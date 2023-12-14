@@ -14,6 +14,11 @@ void ResourcePool::init(const u64 new_pool_size, const u64 new_resource_size)
     const u64 allocation_size = pool_size * (resource_size + sizeof(u32));
     memory                    = (u8*)malloc(allocation_size);
 
+    if (!memory)
+    {
+        throw std::runtime_error("Not enought memory in resource pool.");
+    }
+
     free_indices      = (u32*)(memory + pool_size * resource_size);
     free_indices_head = 0;
 

@@ -273,7 +273,7 @@ bool RendererModule::start()
     uniform_buffer_descriptor.size = sizeof(UniformBuffer);
     global_ubo                     = renderer->create_buffer(uniform_buffer_descriptor);
 
-    // Creating texture
+    // CREATING TEXTURE DESCRIPTOR
     u32               texture_data = 0xFF00FFFF;
     TextureDescriptor texture_descriptor{};
     texture_descriptor.width         = 1;
@@ -281,19 +281,7 @@ bool RendererModule::start()
     texture_descriptor.channel_count = 4;
     texture_descriptor.data          = &texture_data;
 
-    i32      w, h, c;
-    stbi_uc* pixels =
-      stbi_load("../../Sogas/Sandbox/data/textures/carletus.png", &w, &h, &c, STBI_rgb_alpha);
-
-    TextureDescriptor alvar_nazi{};
-    alvar_nazi.width         = (u16)w;
-    alvar_nazi.height        = (u16)h;
-    alvar_nazi.channel_count = (u8)c;
-    alvar_nazi.data          = pixels;
-
-    texture_handle = renderer->create_texture(alvar_nazi);
-
-    stbi_image_free(pixels);
+    texture_handle = renderer->create_texture(texture_descriptor);
 
     // CREATING DESCRIPTOR SET LAYOUTS
     DescriptorSetBindingDescriptor binding = {0,
@@ -380,7 +368,6 @@ void RendererModule::render()
     cmd->bind_descriptor_set(descriptor_set_handle);
     cmd->bind_vertex_buffer(cube_buffer_vertices, 0, 0);
     cmd->bind_index_buffer(cube_buffer_indices, BufferIndexType::UINT16);
-
     cmd->draw_indexed(0, static_cast<u32>(cube_indices.size()), 0, 1, 0);
 
     cmd->bind_vertex_buffer(plane_buffer_vertices, 0, 0);

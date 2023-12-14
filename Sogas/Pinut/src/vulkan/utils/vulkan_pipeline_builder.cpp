@@ -102,9 +102,9 @@ bool VulkanPipeline::build_pipeline(VulkanDevice*                        device,
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
 
+    VkVertexInputAttributeDescription vertex_input_attribute_description[4] = {};
     if (descriptor->vertex_input.attribute_count > 0)
     {
-        VkVertexInputAttributeDescription vertex_input_attribute_description[4];
         ASSERT(descriptor->vertex_input.attribute_count < 4);
 
         for (u32 i = 0; i < descriptor->vertex_input.attribute_count; i++)
