@@ -120,6 +120,9 @@ void Engine::init()
 
     // TODO register standalone game components
 
+    // TODO Camera is just temporal. Should be provided by scene.
+    engine_camera.set_projection_parameters(glm::radians(60.0f), 1.0f, 0.1f, 1000.0f);
+
     module_manager.boot();
 }
 
@@ -141,6 +144,37 @@ void Engine::run()
     while (!should_quit)
     {
         should_quit = platform::peek_message();
+
+        //! TODO Start temporal
+        if (auto input = get_input())
+        {
+            if (input->get_key(0x57).is_pressed())
+            {
+                glm::vec3 new_position =
+                  engine_camera.get_eye() + engine_camera.get_forward() * 0.01f;
+                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+            else if (input->get_key(0x53).is_pressed())
+            {
+                glm::vec3 new_position =
+                  engine_camera.get_eye() - engine_camera.get_forward() * 0.01f;
+                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+            else if (input->get_key(0x41).is_pressed())
+            {
+                glm::vec3 new_position =
+                  engine_camera.get_eye() - engine_camera.get_right() * 0.01f;
+                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+            else if (input->get_key(0x44).is_pressed())
+            {
+                glm::vec3 new_position =
+                  engine_camera.get_eye() + engine_camera.get_right() * 0.01f;
+                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+        }
+        //! TODO End temporal
+
         do_frame();
     }
 }

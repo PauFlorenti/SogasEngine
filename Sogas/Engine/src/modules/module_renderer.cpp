@@ -20,6 +20,9 @@
 
 // TODO remove. Renderer should not calculate dt.
 #include <chrono>
+// TODO engine and camera are temporal
+#include <engine/camera.h>
+#include <engine/engine.h>
 
 namespace sogas
 {
@@ -319,6 +322,7 @@ bool RendererModule::start()
 
 void RendererModule::stop()
 {
+    // TODO this should set up a queue, so that it can be destroyed once the gpu has finished working.
     renderer->destroy_descriptor_set_layout(descriptor_set_layout_handle);
     renderer->destroy_descriptor_set(descriptor_set_handle);
     renderer->destroy_texture(texture_handle);
@@ -343,15 +347,19 @@ void RendererModule::render()
       std::chrono::duration<f32, std::chrono::seconds::period>(current_time - start_time).count();
 
     UniformBuffer ubo{};
-    ubo.model =
-      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f))  *
-      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))
-      ;
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-                           glm::vec3(0.0f, 0.0f, 0.0f),
-                           glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), 1280.0f / (float)720.0f, 0.1f, 10.0f);
+
+    auto camera = sogas::engine::Engine::Get().get_camera();
+    ubo.view = camera.get_view();
+    ubo.proj = camera.get_projection();
     ubo.proj[1][1] *= -1;
+
+    ubo.model =
+      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
+      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+    //                        glm::vec3(0.0f, 0.0f, 0.0f),
+    //                        glm::vec3(0.0f, 0.0f, 1.0f));
+    // ubo.proj = glm::perspective(glm::radians(45.0f), 1280.0f / (float)720.0f, 0.1f, 10.0f);
 
     auto data = renderer->map_buffer(global_ubo, sizeof(ubo));
     memcpy(data, &ubo, sizeof(ubo));

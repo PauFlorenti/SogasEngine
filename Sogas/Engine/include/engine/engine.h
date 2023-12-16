@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/camera.h>
 #include <modules/module_manager.h>
 
 namespace sogas
@@ -30,12 +31,19 @@ class Engine
     void resize(u32 width, u32 height);
 
     std::shared_ptr<modules::input::InputModule> get_input();
+    // TODO Same as below. Temporal.
+    Camera& get_camera()
+    {
+        return engine_camera;
+    }
 
   private:
     void do_frame();
 
     static Engine* engine_instance;
 
+    // TODO This is temporal. Camera should be in the scene.
+    Camera                 engine_camera;
     modules::ModuleManager module_manager;
 };
 } // namespace engine
