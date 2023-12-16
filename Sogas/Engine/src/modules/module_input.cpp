@@ -8,6 +8,24 @@ namespace modules
 {
 namespace input
 {
+
+const sogas::input::Button& InputModule::get_button(const std::string& /*button_name*/) const
+{
+    // TODO Read from reference buttons.
+    PWARN("get_button function not properly implemented yet.");
+    return keyboard.keys[0];
+}
+
+const sogas::input::Button& InputModule::get_key(i32 key) const
+{
+    return keyboard.keys[key];
+}
+
+sogas::input::WindowsKeyboardInterface* InputModule::get_keyboard_device()
+{
+    return &keyboard_device;
+}
+
 bool InputModule::start()
 {
     PINFO("Start input module");
@@ -19,19 +37,14 @@ void InputModule::stop()
     PINFO("Stop input module");
 }
 
-void InputModule::update(f32 /*delta_time*/)
+void InputModule::update(f32 delta_time)
 {
+    keyboard_device.fetch_data(keyboard);
+
+    keyboard.update(delta_time);
 }
 
 void InputModule::render()
-{
-}
-
-void InputModule::render_ui()
-{
-}
-
-void InputModule::render_debug()
 {
 }
 } // namespace input

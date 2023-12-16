@@ -4,6 +4,7 @@
 
 // C++ includes
 #include <array>
+#include <bitset>
 #include <cassert>
 #include <fstream>
 #include <map>

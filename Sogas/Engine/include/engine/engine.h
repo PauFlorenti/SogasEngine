@@ -4,6 +4,13 @@
 
 namespace sogas
 {
+namespace modules
+{
+namespace input
+{
+class InputModule;
+}
+} // namespace modules
 namespace engine
 {
 class Engine
@@ -21,6 +28,8 @@ class Engine
     void run();
     void shutdown();
     void resize(u32 width, u32 height);
+
+    std::shared_ptr<modules::input::InputModule> get_input();
 
   private:
     void do_frame();

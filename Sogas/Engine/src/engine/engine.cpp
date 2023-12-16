@@ -51,10 +51,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         case WM_KEYDOWN:
+        {
+            auto keyboard_device = sogas::engine::Engine::Get().get_input()->get_keyboard_device();
+            keyboard_device->processMsg(hWnd, message, wParam, lParam);
+            break;
+        }
         case WM_KEYUP:
+        {
+            auto keyboard_device = sogas::engine::Engine::Get().get_input()->get_keyboard_device();
+            keyboard_device->processMsg(hWnd, message, wParam, lParam);
             if (wParam == VK_ESCAPE)
                 PostQuitMessage(0);
             break;
+        }
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
         case WM_MBUTTONDOWN:
@@ -146,6 +155,12 @@ void Engine::shutdown()
 void Engine::resize(u32 width, u32 height)
 {
     module_manager.resize_window(width, height);
+}
+
+std::shared_ptr<modules::input::InputModule> Engine::get_input()
+{
+    return std::static_pointer_cast<modules::input::InputModule>(
+      module_manager.get_module("input"));
 }
 
 void Engine::do_frame()
