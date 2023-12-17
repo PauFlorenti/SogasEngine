@@ -114,14 +114,18 @@ void Engine::init()
     // Clock module ??
     // Entity module
     module_manager.register_module(std::make_shared<modules::EntityModule>("entity"));
-    module_manager.register_module(std::make_shared<modules::input::InputModule>("input"));
+    module_manager.register_module(std::make_shared<modules::InputModule>("input"));
     module_manager.register_module(
       std::make_shared<modules::RendererModule>("renderer", platform::get_window_handle(window)));
 
     // TODO register standalone game components
 
+    // TODO Meshes should not be loaded here, but handled by scene.
+    sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cornell_box.obj");
+
     // TODO Camera is just temporal. Should be provided by scene.
     engine_camera.set_projection_parameters(glm::radians(60.0f), 1.0f, 0.1f, 1000.0f);
+    engine_camera.look_at(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     module_manager.boot();
 }
@@ -135,10 +139,6 @@ void Engine::run()
 
     // Platform check for messages
     // If no messages, do frame
-
-    // while (!quit)
-    // peek platform message
-    // do_frame
 
     bool should_quit{false};
     while (!should_quit)
@@ -183,6 +183,10 @@ void Engine::shutdown()
 {
     PDEBUG("Shuting down engine!");
     platform::remove_window(window);
+
+    // Resources should be removed before renderer.
+    meshes.clear();
+
     module_manager.clear();
 }
 
@@ -191,10 +195,14 @@ void Engine::resize(u32 width, u32 height)
     module_manager.resize_window(width, height);
 }
 
-std::shared_ptr<modules::input::InputModule> Engine::get_input()
+std::shared_ptr<modules::InputModule> Engine::get_input()
 {
-    return std::static_pointer_cast<modules::input::InputModule>(
-      module_manager.get_module("input"));
+    return std::static_pointer_cast<modules::InputModule>(module_manager.get_module("input"));
+}
+
+std::shared_ptr<modules::RendererModule> Engine::get_renderer()
+{
+    return std::static_pointer_cast<modules::RendererModule>(module_manager.get_module("renderer"));
 }
 
 void Engine::do_frame()

@@ -7,8 +7,6 @@ namespace sogas
 {
 namespace modules
 {
-namespace input
-{
 class InputModule final : public IModule
 {
   public:
@@ -33,6 +31,5 @@ class InputModule final : public IModule
     sogas::input::KeyBoard                 keyboard;
     sogas::input::WindowsKeyboardInterface keyboard_device;
 };
-} // namespace input
 } // namespace modules
 } // namespace sogas

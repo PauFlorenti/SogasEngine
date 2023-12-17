@@ -16,10 +16,15 @@ class RendererModule : public IModule
     }
     ~RendererModule() = default;
 
+    pinut::GPUDevice* get_device()
+    {
+        return renderer;
+    }
+
   protected:
     bool start() override;
     void stop() override;
-    void update(f32 /*delta_time*/) override {};
+    void update(f32 /*delta_time*/) override{};
     void render() override;
     void render_ui() override{};
     void render_debug() override{};

@@ -24,6 +24,8 @@
 #include <engine/camera.h>
 #include <engine/engine.h>
 
+#include <resources/mesh.h>
+
 namespace sogas
 {
 namespace modules
@@ -51,14 +53,6 @@ static bool read_shader_binary(const std::string& filepath, std::vector<u32>& ou
     return true;
 }
 
-struct Vertex
-{
-    glm::vec3 position;
-    glm::vec3 color;
-    glm::vec2 uv;
-    //glm::vec3 normal;
-};
-
 struct UniformBuffer
 {
     glm::mat4 model;
@@ -66,93 +60,17 @@ struct UniformBuffer
     glm::mat4 proj;
 };
 
-// clang-format off
-std::vector<Vertex> plane_vertices = {
-  {glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-  {glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-  {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)},
-  {glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f), glm::vec2(0.0f, 0.0f)},
-};
-
-std::vector<u16> plane_indices = {0, 1, 2, 0, 2, 3};
-
-std::vector<Vertex> cube_vertices = {
-    //Top
-    {glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},  //0
-    {glm::vec3( 0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},  //1
-    {glm::vec3(-0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},  //2
-    {glm::vec3( 0.5f, 0.5f,  0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},  //3
-
-    //Bottom
-    { glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f) }, //4
-    { glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f) }, //5
-    { glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f) }, //6
-    { glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, //7
-
-    //Front
-    { glm::vec3(-0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) }, //8
-    { glm::vec3(0.5f,  0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) }, //9
-    { glm::vec3(-0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) }, //10
-    { glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)}, //11
-
-    //Back
-    { glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(0.0f, 0.0f) }, //12
-    { glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(0.0f, 1.0f) }, //13
-    { glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(1.0f, 0.0f) }, //14
-    { glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(1.0f, 0.5f, 0.0f), glm::vec2(1.0f, 1.0f)}, //15
-
-    //Left
-    { glm::vec3(-0.5f,  0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(0.0f, 0.0f) }, //16
-    { glm::vec3(-0.5f,  0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(0.0f, 1.0f) }, //17
-    { glm::vec3(-0.5f, -0.5f,  0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(1.0f, 0.0f) }, //18
-    { glm::vec3(-0.5f, -0.5f, -0.5f), glm::vec3(0.5, 1.0f, 0.5f), glm::vec2(1.0f, 1.0f)}, //19
-
-    //Right
-    { glm::vec3(0.5f,  0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(0.0f, 0.0f) }, //20
-    { glm::vec3(0.5f,  0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(0.0f, 1.0f) }, //21
-    { glm::vec3(0.5f, -0.5f,  0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(1.0f, 0.0f) }, //22
-    { glm::vec3(0.5f, -0.5f, -0.5f), glm::vec3(0.5f, 0.5f, 1.0f), glm::vec2(1.0f, 1.0f)}  //23
-};
-
-std::vector<u16> cube_indices = { 
-    //Top
-    0, 1, 2,
-    2, 3, 1,
-
-    //Bottom
-    4, 5, 6,
-    6, 7, 5,
-
-    //Front
-    8, 9, 10,
-    10, 11, 9,
-
-    //Back
-    12, 13, 14,
-    14, 15, 13,
-
-    //Left
-    16, 17, 18,
-    18, 19, 17,
-
-    //Right
-    20, 21, 22,
-    22, 23, 21 };
-// clang-format on
-
-pinut::resources::BufferHandle              plane_buffer_vertices;
-pinut::resources::BufferHandle              plane_buffer_indices;
-pinut::resources::BufferHandle              cube_buffer_vertices;
-pinut::resources::BufferHandle              cube_buffer_indices;
-pinut::resources::BufferHandle              global_ubo;
-pinut::resources::TextureHandle             texture_handle;
-pinut::resources::DescriptorSetHandle       descriptor_set_handle;
-pinut::resources::DescriptorSetLayoutHandle descriptor_set_layout_handle;
-
 using namespace pinut::resources;
+
+BufferHandle              global_ubo;
+TextureHandle             texture_handle;
+DescriptorSetHandle       descriptor_set_handle;
+DescriptorSetLayoutHandle descriptor_set_layout_handle;
 
 bool RendererModule::start()
 {
+    PINFO("Starting renderer module.");
+
     pinut::DeviceDescriptor descriptor;
     descriptor.set_window(1280, 720, window_handle);
 
@@ -190,85 +108,13 @@ bool RendererModule::start()
       .add_viewport(viewport_state)
       .add_rasterization(raster);
 
-    pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(Vertex)});
+    pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(sogas::resources::Vertex)});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {0, 0, offsetof(Vertex, position), VertexInputFormatType::VEC3});
+      {0, 0, offsetof(sogas::resources::Vertex, position), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {1, 0, offsetof(Vertex, color), VertexInputFormatType::VEC3});
+      {1, 0, offsetof(sogas::resources::Vertex, color), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {2, 0, offsetof(Vertex, uv), VertexInputFormatType::VEC2});
-
-    // CREATING VERTEX AND INDEX BUFFER
-    // CUBE
-    const auto cube_vertex_buffer_size = static_cast<u32>(sizeof(Vertex) * cube_vertices.size());
-
-    BufferDescriptor cube_buffer_descriptor;
-    cube_buffer_descriptor.size = cube_vertex_buffer_size;
-    cube_buffer_vertices        = renderer->create_buffer(cube_buffer_descriptor);
-
-    BufferDescriptor cube_staging_buffer_descriptor;
-    cube_staging_buffer_descriptor.size = cube_vertex_buffer_size;
-    cube_staging_buffer_descriptor.type = BufferType::STAGING;
-    cube_staging_buffer_descriptor.data = cube_vertices.data();
-    const auto cube_staging_buffer      = renderer->create_buffer(cube_staging_buffer_descriptor);
-
-    renderer->copy_buffer(cube_staging_buffer, cube_buffer_vertices, cube_vertex_buffer_size);
-    renderer->destroy_buffer({cube_staging_buffer});
-
-    const auto cube_indices_buffer_size = static_cast<u32>(sizeof(u16) * cube_indices.size());
-    cube_buffer_descriptor.size         = cube_indices_buffer_size;
-    cube_buffer_descriptor.type         = BufferType::INDEX;
-    cube_buffer_indices                 = renderer->create_buffer(cube_buffer_descriptor);
-
-    BufferDescriptor index_staging_buffer_descriptor;
-    index_staging_buffer_descriptor.data = cube_indices.data();
-    index_staging_buffer_descriptor.size = cube_indices_buffer_size;
-    index_staging_buffer_descriptor.type = BufferType::STAGING;
-    const auto index_staging_buffer      = renderer->create_buffer(index_staging_buffer_descriptor);
-
-    renderer->copy_buffer(index_staging_buffer, cube_buffer_indices, cube_indices_buffer_size);
-    renderer->destroy_buffer({index_staging_buffer});
-
-    // PLANE
-    const auto plane_vertices_size = static_cast<u32>(sizeof(Vertex) * plane_vertices.size());
-
-    BufferDescriptor plane_buffer_descriptor{};
-    plane_buffer_descriptor.size = plane_vertices_size;
-    plane_buffer_descriptor.type = BufferType::VERTEX;
-    plane_buffer_vertices        = renderer->create_buffer(plane_buffer_descriptor);
-
-    BufferDescriptor plane_staging_buffer_descriptor{};
-    plane_staging_buffer_descriptor.data = plane_vertices.data();
-    plane_staging_buffer_descriptor.size = plane_vertices_size;
-    plane_staging_buffer_descriptor.type = BufferType::STAGING;
-
-    auto plane_staging_buffer_vertices = renderer->create_buffer(plane_staging_buffer_descriptor);
-
-    renderer->copy_buffer(plane_staging_buffer_vertices,
-                          plane_buffer_vertices,
-                          plane_vertices_size);
-
-    renderer->destroy_buffer(plane_staging_buffer_vertices);
-
-    const auto indices_buffer_size = static_cast<u32>(sizeof(u16) * plane_indices.size());
-
-    BufferDescriptor plane_indices_buffer_descriptor{};
-    plane_indices_buffer_descriptor.size = indices_buffer_size;
-    plane_indices_buffer_descriptor.type = BufferType::INDEX;
-
-    plane_buffer_indices = renderer->create_buffer(plane_indices_buffer_descriptor);
-
-    BufferDescriptor plane_indices_staging_buffer_descriptor{};
-    plane_indices_staging_buffer_descriptor.data = plane_indices.data();
-    plane_indices_staging_buffer_descriptor.size = indices_buffer_size;
-    plane_indices_staging_buffer_descriptor.type = BufferType::STAGING;
-
-    auto plane_staging_buffer_indices =
-      renderer->create_buffer(plane_indices_staging_buffer_descriptor);
-
-    renderer->copy_buffer(plane_staging_buffer_indices, plane_buffer_indices, indices_buffer_size);
-
-    renderer->destroy_buffer(plane_staging_buffer_indices);
+      {2, 0, offsetof(sogas::resources::Vertex, uv), VertexInputFormatType::VEC2});
 
     // CREATING UNIFORM BUFFERS
     BufferDescriptor uniform_buffer_descriptor;
@@ -322,15 +168,13 @@ bool RendererModule::start()
 
 void RendererModule::stop()
 {
+    PINFO("Shutting down renderer.");
+
     // TODO this should set up a queue, so that it can be destroyed once the gpu has finished working.
     renderer->destroy_descriptor_set_layout(descriptor_set_layout_handle);
     renderer->destroy_descriptor_set(descriptor_set_handle);
     renderer->destroy_texture(texture_handle);
     renderer->destroy_buffer(global_ubo);
-    renderer->destroy_buffer(plane_buffer_indices);
-    renderer->destroy_buffer(plane_buffer_vertices);
-    renderer->destroy_buffer(cube_buffer_indices);
-    renderer->destroy_buffer(cube_buffer_vertices);
 
     renderer->shutdown();
 }
@@ -349,17 +193,13 @@ void RendererModule::render()
     UniformBuffer ubo{};
 
     auto camera = sogas::engine::Engine::Get().get_camera();
-    ubo.view = camera.get_view();
-    ubo.proj = camera.get_projection();
+    ubo.view    = camera.get_view();
+    ubo.proj    = camera.get_projection();
     ubo.proj[1][1] *= -1;
 
     ubo.model =
       glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
       glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-    //                        glm::vec3(0.0f, 0.0f, 0.0f),
-    //                        glm::vec3(0.0f, 0.0f, 1.0f));
-    // ubo.proj = glm::perspective(glm::radians(45.0f), 1280.0f / (float)720.0f, 0.1f, 10.0f);
 
     auto data = renderer->map_buffer(global_ubo, sizeof(ubo));
     memcpy(data, &ubo, sizeof(ubo));
@@ -374,13 +214,14 @@ void RendererModule::render()
     cmd->set_viewport(nullptr);
 
     cmd->bind_descriptor_set(descriptor_set_handle);
-    cmd->bind_vertex_buffer(cube_buffer_vertices, 0, 0);
-    cmd->bind_index_buffer(cube_buffer_indices, BufferIndexType::UINT16);
-    cmd->draw_indexed(0, static_cast<u32>(cube_indices.size()), 0, 1, 0);
 
-    cmd->bind_vertex_buffer(plane_buffer_vertices, 0, 0);
-    cmd->bind_index_buffer(plane_buffer_indices, BufferIndexType::UINT16);
-    cmd->draw_indexed(0, static_cast<u32>(plane_indices.size()), 0, 1, 0);
+    auto meshes = sogas::engine::Engine::Get().get_meshes();
+
+    auto it = meshes->find("cube");
+    if (it != meshes->end())
+    {
+        it->second->draw_indexed(cmd);
+    }
 
     renderer->end_frame();
 

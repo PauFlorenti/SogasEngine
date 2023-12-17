@@ -6,9 +6,6 @@ namespace sogas
 {
 namespace modules
 {
-namespace input
-{
-
 const sogas::input::Button& InputModule::get_button(const std::string& /*button_name*/) const
 {
     // TODO Read from reference buttons.
@@ -47,6 +44,5 @@ void InputModule::update(f32 delta_time)
 void InputModule::render()
 {
 }
-} // namespace input
 } // namespace modules
 } // namespace sogas

@@ -21,6 +21,8 @@ target_include_directories(engine
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../Logger/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tinyobj
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tinygltf
 )
 
 target_link_libraries(engine PUBLIC logger PRIVATE pinut)
