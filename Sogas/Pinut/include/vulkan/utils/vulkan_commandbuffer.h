@@ -17,6 +17,11 @@ class VulkanCommandBuffer : public resources::CommandBuffer
     void set_viewport(const resources::Viewport* viewport) override;
     void set_scissors(const resources::Rect* scissors) override;
 
+    void set_push_constant(resources::ShaderStageType stage,
+                           u32                        size,
+                           u32                        offset,
+                           void*                      data) override;
+                           
     void clear(f32 red, f32 green, f32 blue, f32 alpha) override;
 
     void draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count) override;

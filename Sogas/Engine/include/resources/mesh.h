@@ -47,7 +47,6 @@ class Mesh
     std::vector<u16>                      indices;
     pinut::resources::BufferHandle        vertex_buffer{pinut::resources::invalid_buffer};
     pinut::resources::BufferHandle        index_buffer{pinut::resources::invalid_buffer};
-    pinut::resources::DescriptorSetHandle descriptor_set;
 };
 
 void init_default_meshes();

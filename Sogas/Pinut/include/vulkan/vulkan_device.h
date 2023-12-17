@@ -99,6 +99,13 @@ class VulkanDevice : public GPUDevice
     void destroy_descriptor_set(resources::DescriptorSetHandle handle) override;
     void destroy_descriptor_set_layout(resources::DescriptorSetLayoutHandle handle) override;
 
+    void destroy_buffer_immediate(resources::ResourceHandle handle) override;
+    void destroy_texture_immediate(resources::ResourceHandle handle) override;
+    void destroy_descriptor_set_immediate(resources::ResourceHandle handle) override;
+    void destroy_descriptor_set_layout_immediate(resources::ResourceHandle handle) override;
+
+    void destroy_pending_resources();
+
     static std::map<std::string, VulkanShaderState> shaders;
     static std::map<std::string, VulkanPipeline>    pipelines;
     static std::map<std::string, VulkanRenderPass>  render_passes;
@@ -121,11 +128,10 @@ class VulkanDevice : public GPUDevice
     };
 
     // Access resources
-    VulkanBuffer*              access_buffer(resources::BufferHandle handle);
-    VulkanTexture*             access_texture(resources::TextureHandle handle);
-    VulkanDescriptorSet*       access_descriptor_set(resources::DescriptorSetHandle handle);
-    VulkanDescriptorSetLayout* access_descriptor_set_layout(
-      resources::DescriptorSetLayoutHandle handle);
+    VulkanBuffer*              access_buffer(resources::ResourceHandle handle);
+    VulkanTexture*             access_texture(resources::ResourceHandle handle);
+    VulkanDescriptorSet*       access_descriptor_set(resources::ResourceHandle handle);
+    VulkanDescriptorSetLayout* access_descriptor_set_layout(resources::ResourceHandle handle);
 
   private:
     bool                                 create_instance();
@@ -176,6 +182,8 @@ class VulkanDevice : public GPUDevice
     VkQueue graphics_queue = VK_NULL_HANDLE;
     VkQueue present_queue  = VK_NULL_HANDLE;
     VkQueue transfer_queue = VK_NULL_HANDLE;
+
+    std::vector<resources::ResourceDeletion> deletion_queue;
 
     // Swapchain variables
     Swapchain swapchain;

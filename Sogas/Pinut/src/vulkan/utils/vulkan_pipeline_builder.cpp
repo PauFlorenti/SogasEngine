@@ -214,7 +214,7 @@ bool VulkanPipeline::build_pipeline(VulkanDevice*                        device,
     for (u32 i = 0; i < descriptor->layouts_count; ++i)
     {
         const auto layout =
-          device->access_descriptor_set_layout(descriptor->descriptor_set_layouts[i]);
+          device->access_descriptor_set_layout(descriptor->descriptor_set_layouts[i].id);
 
         descriptor_set_layouts[i] = layout->layout;
     }
@@ -223,6 +223,17 @@ bool VulkanPipeline::build_pipeline(VulkanDevice*                        device,
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
     pipeline_layout_info.setLayoutCount = descriptor->layouts_count;
     pipeline_layout_info.pSetLayouts    = descriptor_set_layouts;
+
+    VkPushConstantRange push_constants[8] = {};
+    for (u32 i = 0; i < descriptor->push_constant_count; ++i)
+    {
+        push_constants[i].stageFlags = get_shader_stage_flag(descriptor->push_constants[i].stage);
+        push_constants[i].size       = descriptor->push_constants[i].size;
+        push_constants[i].offset     = descriptor->push_constants[i].offset;
+    }
+
+    pipeline_layout_info.pushConstantRangeCount = descriptor->push_constant_count;
+    pipeline_layout_info.pPushConstantRanges    = push_constants;
 
     VK_CHECK(vkCreatePipelineLayout(device->device,
                                     &pipeline_layout_info,

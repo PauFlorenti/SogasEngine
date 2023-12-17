@@ -244,7 +244,6 @@ void Mesh::destroy()
 
     device->destroy_buffer(vertex_buffer);
     device->destroy_buffer(index_buffer);
-    device->destroy_descriptor_set(descriptor_set);
 }
 } // namespace resources
 } // namespace sogas

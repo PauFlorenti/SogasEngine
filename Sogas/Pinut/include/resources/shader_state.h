@@ -1,18 +1,11 @@
 #pragma once
 
+#include <resources/resources.h>
+
 namespace pinut
 {
 namespace resources
 {
-enum class ShaderStageType
-{
-    VERTEX = 0,
-    GEOMETRY,
-    FRAGMENT,
-    COMPUTE,
-    MAX_SHADER_TYPE
-};
-
 struct ShaderStage
 {
     std::vector<u32> code;
@@ -50,20 +43,6 @@ struct ShaderStateDescriptor
         shader_stages[static_cast<u32>(shader_stage.type)] = shader_stage;
         return *this;
     }
-};
-
-enum class DescriptorType
-{
-    SAMPLER,
-    COMBINED_IMAGE_SAMPLER,
-    SAMPLED_IMAGE,
-    STORAGE_IMAGE,
-    UNIFORM,
-    STORAGE,
-    UNIFORM_DYNAMIC,
-    STORAGE_DYNAMIC,
-    INPUT_ATTACHMENT,
-    COUNT
 };
 
 struct DescriptorSetBindingDescriptor
@@ -148,5 +127,13 @@ struct DescriptorSetDescriptor
         return *this;
     }
 };
+
+struct PushConstantDescriptor
+{
+    ShaderStageType stage  = ShaderStageType::MAX_SHADER_TYPE;
+    u32             size   = 0;
+    u32             offset = 0;
+};
+
 } // namespace resources
 } // namespace pinut

@@ -55,7 +55,6 @@ static bool read_shader_binary(const std::string& filepath, std::vector<u32>& ou
 
 struct UniformBuffer
 {
-    glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
 };
@@ -150,6 +149,7 @@ bool RendererModule::start()
 
     descriptor_set_layout_handle =
       renderer->create_descriptor_set_layout(descriptor_set_layout_descriptor);
+
     pipeline_descriptor.add_descriptor_set_layout(descriptor_set_layout_handle);
 
     DescriptorSetDescriptor descriptor_set_descriptor = {};
@@ -159,8 +159,8 @@ bool RendererModule::start()
 
     descriptor_set_handle = renderer->create_descriptor_set(descriptor_set_descriptor);
 
-    // TODO: Handle pipeline creation differently ...
-    // Data should be given from engine, not hardcoded in renderer.
+    pipeline_descriptor.add_push_constant({ShaderStageType::VERTEX, sizeof(glm::mat4)});
+
     renderer->create_pipeline(pipeline_descriptor);
 
     return true;
@@ -197,7 +197,7 @@ void RendererModule::render()
     ubo.proj    = camera.get_projection();
     ubo.proj[1][1] *= -1;
 
-    ubo.model =
+    glm::mat4 model =
       glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
       glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -212,6 +212,8 @@ void RendererModule::render()
     cmd->bind_pipeline("triangle_pipeline");
     cmd->set_scissors(nullptr);
     cmd->set_viewport(nullptr);
+
+    cmd->set_push_constant(ShaderStageType::VERTEX, sizeof(glm::mat4), 0, &model);
 
     cmd->bind_descriptor_set(descriptor_set_handle);
 

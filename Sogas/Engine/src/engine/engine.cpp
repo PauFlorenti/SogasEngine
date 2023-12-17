@@ -124,8 +124,8 @@ void Engine::init()
     sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cornell_box.obj");
 
     // TODO Camera is just temporal. Should be provided by scene.
-    engine_camera.set_projection_parameters(glm::radians(60.0f), 1.0f, 0.1f, 1000.0f);
-    engine_camera.look_at(glm::vec3(0.0f, 0.0f, -900.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    engine_camera.set_projection_parameters(glm::radians(60.0f), 1.0f, 0.1f, 10000.0f);
+    engine_camera.look_at(glm::vec3(0.0f, 0.0f, -100.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     module_manager.boot();
 }
@@ -185,6 +185,10 @@ void Engine::shutdown()
     platform::remove_window(window);
 
     // Resources should be removed before renderer.
+    for (auto mesh : meshes)
+    {
+        mesh.second->destroy();
+    }
     meshes.clear();
 
     module_manager.clear();

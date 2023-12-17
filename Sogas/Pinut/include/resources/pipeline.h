@@ -121,6 +121,8 @@ struct PipelineDescriptor
     TopologyType              topology = TopologyType::TRIANGLE;
     DescriptorSetLayoutHandle descriptor_set_layouts[8];
     u32                       layouts_count{0};
+    PushConstantDescriptor    push_constants[8];
+    u32                       push_constant_count{0};
 
     PipelineDescriptor& add_name(const char* new_name)
     {
@@ -160,6 +162,12 @@ struct PipelineDescriptor
     PipelineDescriptor& add_descriptor_set_layout(const DescriptorSetLayoutHandle& handle)
     {
         descriptor_set_layouts[layouts_count++] = handle;
+        return *this;
+    }
+
+    PipelineDescriptor& add_push_constant(const PushConstantDescriptor& push_constant)
+    {
+        push_constants[push_constant_count++] = push_constant;
         return *this;
     }
 };

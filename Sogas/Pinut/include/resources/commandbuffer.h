@@ -18,6 +18,8 @@ class CommandBuffer
     virtual void set_viewport(const Viewport* viewport) = 0;
     virtual void set_scissors(const Rect* scissors)     = 0;
 
+    virtual void set_push_constant(ShaderStageType stage, u32 size, u32 offset, void* data) = 0;
+
     virtual void clear(f32 red, f32 green, f32 blue, f32 alpha) = 0;
 
     virtual void draw(u32 first_vertex,
@@ -30,12 +32,11 @@ class CommandBuffer
                               u32 instance_count,
                               u32 vertex_offset) = 0;
 
-    virtual void bind_descriptor_set(const DescriptorSetHandle& handle)   = 0;
+    virtual void bind_descriptor_set(const DescriptorSetHandle& handle)                    = 0;
     virtual void bind_vertex_buffer(const BufferHandle& handle,
                                     const u32           binding,
-                                    const u32           offset)                     = 0;
-    virtual void bind_index_buffer(const BufferHandle&        handle,
-                                   resources::BufferIndexType index_type) = 0;
+                                    const u32           offset)                                      = 0;
+    virtual void bind_index_buffer(const BufferHandle& handle, BufferIndexType index_type) = 0;
 
     GPUDevice* device = nullptr;
 };

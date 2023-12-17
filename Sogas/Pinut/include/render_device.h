@@ -67,5 +67,10 @@ class GPUDevice
     virtual void destroy_texture(resources::TextureHandle handle)                           = 0;
     virtual void destroy_descriptor_set(resources::DescriptorSetHandle handle)              = 0;
     virtual void destroy_descriptor_set_layout(resources::DescriptorSetLayoutHandle handle) = 0;
+
+    virtual void destroy_buffer_immediate(resources::ResourceHandle handle)                = 0;
+    virtual void destroy_texture_immediate(resources::ResourceHandle handle)               = 0;
+    virtual void destroy_descriptor_set_immediate(resources::ResourceHandle handle)        = 0;
+    virtual void destroy_descriptor_set_layout_immediate(resources::ResourceHandle handle) = 0;
 };
 } // namespace pinut

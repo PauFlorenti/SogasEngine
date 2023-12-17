@@ -99,6 +99,19 @@ void VulkanCommandBuffer::set_scissors(const resources::Rect* new_scissor)
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
 
+void VulkanCommandBuffer::set_push_constant(resources::ShaderStageType stage,
+                                            u32                        size,
+                                            u32                        offset,
+                                            void*                      data)
+{
+    vkCmdPushConstants(cmd,
+                       current_pipeline_layout,
+                       get_shader_stage_flag(stage),
+                       offset,
+                       size,
+                       data);
+}
+
 void VulkanCommandBuffer::clear(f32 red, f32 green, f32 blue, f32 alpha)
 {
     clear_values[0].color        = {red, green, blue, alpha};
@@ -125,7 +138,7 @@ void VulkanCommandBuffer::draw_indexed(u32 first_index,
 void VulkanCommandBuffer::bind_descriptor_set(const resources::DescriptorSetHandle& handle)
 {
     const auto vulkan_device  = dynamic_cast<VulkanDevice*>(device);
-    const auto descriptor_set = vulkan_device->access_descriptor_set(handle);
+    const auto descriptor_set = vulkan_device->access_descriptor_set(handle.id);
 
     vkCmdBindDescriptorSets(cmd,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -144,7 +157,7 @@ void VulkanCommandBuffer::bind_vertex_buffer(const resources::BufferHandle& hand
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);
 
-    auto buffer = vulkan_device->access_buffer(handle);
+    auto buffer = vulkan_device->access_buffer(handle.id);
 
     if (buffer == nullptr)
     {
@@ -162,7 +175,7 @@ void VulkanCommandBuffer::bind_index_buffer(const resources::BufferHandle& handl
     auto vulkan_device = dynamic_cast<VulkanDevice*>(device);
     ASSERT(vulkan_device != nullptr);
 
-    auto buffer = vulkan_device->access_buffer(handle);
+    auto buffer = vulkan_device->access_buffer(handle.id);
 
     if (buffer == nullptr)
     {

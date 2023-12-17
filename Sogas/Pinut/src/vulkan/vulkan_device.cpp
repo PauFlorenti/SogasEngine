@@ -237,6 +237,8 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
     window_handle = descriptor.window;
     extent        = {descriptor.width, descriptor.height};
 
+    deletion_queue.reserve(32);
+
     PDEBUG("GPU Device init.");
     create_instance();
     create_surface(window_handle);
@@ -265,7 +267,7 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
                                     1,
                                     "DepthTexture"});
 
-    auto texture = access_texture(depth_texture);
+    auto texture = access_texture(depth_texture.id);
     auto cmd     = begin_single_use_command_buffer();
     transition_image_layout(cmd,
                             texture->image,
@@ -353,7 +355,7 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
 
     const u32 swapchain_images_size = static_cast<u32>(swapchain_images.size());
 
-    const auto vulkan_depth_texture = access_texture(depth_texture);
+    const auto vulkan_depth_texture = access_texture(depth_texture.id);
 
     for (u32 i = 0; i < swapchain_images_size; ++i)
     {
@@ -404,7 +406,10 @@ void VulkanDevice::shutdown()
     VK_CHECK(vkWaitForFences(device, MAX_SWAPCHAIN_IMAGES, render_fences, VK_TRUE, UINT64_MAX));
     VK_CHECK(vkDeviceWaitIdle(device));
 
-    destroy_texture(depth_texture);
+    destroy_texture_immediate(depth_texture.id);
+
+    destroy_pending_resources();
+    deletion_queue.clear();
 
     buffers.shutdown();
     textures.shutdown();
@@ -461,7 +466,7 @@ resources::BufferHandle VulkanDevice::create_buffer(const resources::BufferDescr
         return handle;
     }
 
-    auto buffer = access_buffer(handle);
+    auto buffer = access_buffer(handle.id);
 
     VkBufferUsageFlags    usage_flags  = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
     VkMemoryPropertyFlags memory_flags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
@@ -518,7 +523,7 @@ resources::TextureHandle VulkanDevice::create_texture(
         return handle;
     }
 
-    VulkanTexture* texture = access_texture(handle);
+    VulkanTexture* texture = access_texture(handle.id);
     texture->format        = get_texture_format(descriptor.format);
 
     VkImageType texture_type = get_texture_type(descriptor.type);
@@ -626,7 +631,7 @@ resources::DescriptorSetLayoutHandle VulkanDevice::create_descriptor_set_layout(
         return layout_handle;
     }
 
-    auto descriptor_set_layout = access_descriptor_set_layout(layout_handle);
+    auto descriptor_set_layout = access_descriptor_set_layout(layout_handle.id);
     ASSERT(descriptor_set_layout != nullptr);
 
     descriptor_set_layout->bindings = (resources::DescriptorSetBindingDescriptor*)malloc(
@@ -680,8 +685,8 @@ resources::DescriptorSetHandle VulkanDevice::create_descriptor_set(
         return handle;
     }
 
-    const auto descriptor_set = access_descriptor_set(handle);
-    const auto layout         = access_descriptor_set_layout(descriptor.layout_handle);
+    const auto descriptor_set = access_descriptor_set(handle.id);
+    const auto layout         = access_descriptor_set_layout(descriptor.layout_handle.id);
 
     VkDescriptorSetAllocateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
     info.descriptorPool              = descriptor_pool;
@@ -711,7 +716,7 @@ resources::DescriptorSetHandle VulkanDevice::create_descriptor_set(
             case resources::DescriptorType::COMBINED_IMAGE_SAMPLER:
             {
                 resources::TextureHandle texture_handle{descriptor.resources[i]};
-                const auto               texture = access_texture(texture_handle);
+                const auto               texture = access_texture(texture_handle.id);
 
                 image_info[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 image_info[i].imageView   = texture->image_view;
@@ -724,7 +729,7 @@ resources::DescriptorSetHandle VulkanDevice::create_descriptor_set(
             case resources::DescriptorType::UNIFORM:
             {
                 resources::BufferHandle buffer_handle{descriptor.resources[i]};
-                const auto              buffer = access_buffer(buffer_handle);
+                const auto              buffer = access_buffer(buffer_handle.id);
                 ASSERT(buffer != nullptr);
 
                 buffer_info[i].buffer = buffer->buffer;
@@ -817,6 +822,8 @@ void VulkanDevice::end_frame()
         PFATAL("Failed to present swapchain image!");
     }
 
+    destroy_pending_resources();
+
     current_frame = (current_frame + 1) % MAX_SWAPCHAIN_IMAGES;
 }
 
@@ -851,7 +858,7 @@ void VulkanDevice::unmap_buffer(const resources::BufferHandle buffer_handle)
 {
     ASSERT(buffer_handle.id != INVALID_ID);
 
-    const auto buffer = access_buffer(buffer_handle);
+    const auto buffer = access_buffer(buffer_handle.id);
     ASSERT(buffer != nullptr);
 
     vkUnmapMemory(device, buffer->memory);
@@ -867,8 +874,8 @@ void VulkanDevice::copy_buffer(const resources::BufferHandle src_buffer_handle,
     // Get buffers
     // TODO simplify this.
 
-    const auto src_buffer = access_buffer(src_buffer_handle);
-    const auto dst_buffer = access_buffer(dst_buffer_handle);
+    const auto src_buffer = access_buffer(src_buffer_handle.id);
+    const auto dst_buffer = access_buffer(dst_buffer_handle.id);
     if (src_buffer == nullptr || dst_buffer == nullptr)
     {
         // TODO #include Windows.h gets in conflict with PERROR(). Find a way to user own logger.
@@ -910,8 +917,8 @@ void VulkanDevice::copy_buffer_to_image(const resources::BufferHandle  buffer_ha
                                         const u32                      width,
                                         const u32                      height)
 {
-    auto buffer  = access_buffer(buffer_handle);
-    auto texture = access_texture(texture_handle);
+    auto buffer  = access_buffer(buffer_handle.id);
+    auto texture = access_texture(texture_handle.id);
 
     VkBufferImageCopy region = {};
     region.bufferOffset      = 0;
@@ -952,15 +959,35 @@ void VulkanDevice::copy_buffer_to_image(const resources::BufferHandle  buffer_ha
 
 void VulkanDevice::destroy_buffer(resources::BufferHandle handle)
 {
+    deletion_queue.push_back({resources::ResourceDestroyType::BUFFER, handle.id});
+}
+
+void VulkanDevice::destroy_texture(resources::TextureHandle handle)
+{
+    deletion_queue.push_back({resources::ResourceDestroyType::TEXTURE, handle.id});
+}
+
+void VulkanDevice::destroy_descriptor_set(resources::DescriptorSetHandle handle)
+{
+    deletion_queue.push_back({resources::ResourceDestroyType::DESCRIPTOR_SET, handle.id});
+}
+
+void VulkanDevice::destroy_descriptor_set_layout(resources::DescriptorSetLayoutHandle handle)
+{
+    deletion_queue.push_back({resources::ResourceDestroyType::DESCRIPTOR_SET_LAYOUT, handle.id});
+}
+
+void VulkanDevice::destroy_buffer_immediate(resources::ResourceHandle handle)
+{
     const auto buffer = access_buffer(handle);
 
     vkDestroyBuffer(device, buffer->buffer, nullptr);
     vkFreeMemory(device, buffer->memory, nullptr);
 
-    buffers.remove_resource(handle.id);
+    buffers.remove_resource(handle);
 }
 
-void VulkanDevice::destroy_texture(resources::TextureHandle handle)
+void VulkanDevice::destroy_texture_immediate(resources::ResourceHandle handle)
 {
     const auto texture = access_texture(handle);
 
@@ -969,25 +996,61 @@ void VulkanDevice::destroy_texture(resources::TextureHandle handle)
     vkDestroyImage(device, texture->image, nullptr);
     vkFreeMemory(device, texture->memory, nullptr);
 
-    textures.remove_resource(handle.id);
+    textures.remove_resource(handle);
 }
 
-void VulkanDevice::destroy_descriptor_set(resources::DescriptorSetHandle handle)
+void VulkanDevice::destroy_descriptor_set_immediate(resources::ResourceHandle handle)
 {
     auto descriptor_set = access_descriptor_set(handle);
 
     vkFreeDescriptorSets(device, descriptor_pool, 1, &descriptor_set->descriptor_set);
 
-    descriptor_sets.remove_resource(handle.id);
+    descriptor_sets.remove_resource(handle);
 }
 
-void VulkanDevice::destroy_descriptor_set_layout(resources::DescriptorSetLayoutHandle handle)
+void VulkanDevice::destroy_descriptor_set_layout_immediate(resources::ResourceHandle handle)
 {
     auto layout = access_descriptor_set_layout(handle);
 
     vkDestroyDescriptorSetLayout(device, layout->layout, nullptr);
 
-    descriptor_set_layouts.remove_resource(handle.id);
+    descriptor_set_layouts.remove_resource(handle);
+}
+
+void VulkanDevice::destroy_pending_resources()
+{
+    if (deletion_queue.empty())
+    {
+        return;
+    }
+
+    for (i32 i = (i32)deletion_queue.size() - 1; i >= 0; --i)
+    {
+        const auto handle = deletion_queue.at(i).handle;
+        switch (deletion_queue.at(i).type)
+        {
+            case resources::ResourceDestroyType::BUFFER:
+                destroy_buffer_immediate(handle);
+                break;
+            case resources::ResourceDestroyType::TEXTURE:
+                destroy_texture_immediate(handle);
+                break;
+            case resources::ResourceDestroyType::SHADER_STATE:
+                break;
+            case resources::ResourceDestroyType::RENDER_PASS:
+                break;
+            case resources::ResourceDestroyType::DESCRIPTOR_SET:
+                destroy_descriptor_set_immediate(handle);
+                break;
+            case resources::ResourceDestroyType::DESCRIPTOR_SET_LAYOUT:
+                destroy_descriptor_set_layout_immediate(handle);
+                break;
+        }
+
+        deletion_queue.erase(deletion_queue.begin() + i);
+    }
+
+    ASSERT(deletion_queue.empty());
 }
 
 bool VulkanDevice::create_instance()
@@ -1044,26 +1107,25 @@ bool VulkanDevice::create_instance()
     return true;
 }
 
-VulkanBuffer* VulkanDevice::access_buffer(resources::BufferHandle handle)
+VulkanBuffer* VulkanDevice::access_buffer(resources::ResourceHandle handle)
 {
-    return static_cast<VulkanBuffer*>(buffers.access_resource(handle.id));
+    return static_cast<VulkanBuffer*>(buffers.access_resource(handle));
 }
 
-VulkanTexture* VulkanDevice::access_texture(resources::TextureHandle handle)
+VulkanTexture* VulkanDevice::access_texture(resources::ResourceHandle handle)
 {
-    return static_cast<VulkanTexture*>(textures.access_resource(handle.id));
+    return static_cast<VulkanTexture*>(textures.access_resource(handle));
 }
 
-VulkanDescriptorSet* VulkanDevice::access_descriptor_set(resources::DescriptorSetHandle handle)
+VulkanDescriptorSet* VulkanDevice::access_descriptor_set(resources::ResourceHandle handle)
 {
-    return static_cast<VulkanDescriptorSet*>(descriptor_sets.access_resource(handle.id));
+    return static_cast<VulkanDescriptorSet*>(descriptor_sets.access_resource(handle));
 }
 
 VulkanDescriptorSetLayout* VulkanDevice::access_descriptor_set_layout(
-  resources::DescriptorSetLayoutHandle handle)
+  resources::ResourceHandle handle)
 {
-    return static_cast<VulkanDescriptorSetLayout*>(
-      descriptor_set_layouts.access_resource(handle.id));
+    return static_cast<VulkanDescriptorSetLayout*>(descriptor_set_layouts.access_resource(handle));
 }
 
 #ifdef _DEBUG
