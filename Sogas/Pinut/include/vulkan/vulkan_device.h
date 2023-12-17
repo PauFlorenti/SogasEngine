@@ -6,10 +6,9 @@
 #include <resources/resources.h>
 #include <resources/shader_state.h>
 #include <vulkan/utils/vulkan_commandbuffer.h>
-#include <vulkan/utils/vulkan_pipeline_builder.h>
 #include <vulkan/utils/vulkan_render_pass.h>
 #include <vulkan/utils/vulkan_shader_loader.h>
-#include <vulkan/utils/vulkan_swapchain_builder.h>
+#include <vulkan/utils/vulkan_swapchain.h>
 
 namespace sogas
 {
@@ -50,6 +49,13 @@ struct VulkanDescriptorSetLayout
     resources::DescriptorSetBindingDescriptor* bindings             = nullptr;
     u16                                        bindings_count       = 0;
     u8                                         descriptor_set_index = 0;
+};
+
+struct VulkanPipeline
+{
+    VkPipeline          pipeline        = VK_NULL_HANDLE;
+    VkPipelineLayout    pipeline_layout = VK_NULL_HANDLE;
+    VkPipelineBindPoint bind_point      = VK_PIPELINE_BIND_POINT_GRAPHICS; // Graphics as default.
 };
 
 class VulkanDevice : public GPUDevice
@@ -210,9 +216,6 @@ class VulkanDevice : public GPUDevice
 
     // Class helpers
     VulkanShaderLoader vulkan_shader_loader;
-
-    //VulkanRenderPass* swapchain_renderpass = nullptr;
-
     // Default triangle drawing. Probably gonna be removed from here.
     //! Temporal
     VkCommandPool command_pool;
