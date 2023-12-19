@@ -135,7 +135,7 @@ void VulkanCommandBuffer::draw_indexed(u32 first_index,
     vkCmdDrawIndexed(cmd, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
-void VulkanCommandBuffer::bind_descriptor_set(const resources::DescriptorSetHandle& handle)
+void VulkanCommandBuffer::bind_descriptor_set(const resources::DescriptorSetHandle& handle, u32 set)
 {
     const auto vulkan_device  = dynamic_cast<VulkanDevice*>(device);
     const auto descriptor_set = vulkan_device->access_descriptor_set(handle.id);
@@ -143,7 +143,7 @@ void VulkanCommandBuffer::bind_descriptor_set(const resources::DescriptorSetHand
     vkCmdBindDescriptorSets(cmd,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
                             current_pipeline_layout,
-                            0,
+                            set,
                             1,
                             &descriptor_set->descriptor_set,
                             0,

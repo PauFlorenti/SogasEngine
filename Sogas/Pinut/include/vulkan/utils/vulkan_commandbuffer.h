@@ -21,7 +21,7 @@ class VulkanCommandBuffer : public resources::CommandBuffer
                            u32                        size,
                            u32                        offset,
                            void*                      data) override;
-                           
+
     void clear(f32 red, f32 green, f32 blue, f32 alpha) override;
 
     void draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count) override;
@@ -31,7 +31,7 @@ class VulkanCommandBuffer : public resources::CommandBuffer
                       u32 instance_count,
                       u32 vertex_offset) override;
 
-    void bind_descriptor_set(const resources::DescriptorSetHandle& handle) override;
+    void bind_descriptor_set(const resources::DescriptorSetHandle& handle, u32 set = 0) override;
 
     void bind_vertex_buffer(const resources::BufferHandle& handle,
                             const u32                      binding,

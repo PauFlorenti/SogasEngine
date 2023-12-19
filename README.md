@@ -17,3 +17,17 @@ this main one.
 
 - [ ] Platform window creation should only return a window ID.
 - [ ] All window info is stored in a fixed array. At the moment no more than 4 windows are allowed.
+
+## PINUT
+- [ ] Easily bind multiple descriptor sets.
+- [ ] Draw multiple entities.
+
+## ENGINE
+- [x] Load .obj files.
+- [ ] Load .gltf files.
+- [ ] Create transform component.
+- [ ] Create render component.
+    - [ ] Create mesh data.
+    - [ ] Create material data.
+- [ ] Create light component.
+- [ ] Parse json scene file.

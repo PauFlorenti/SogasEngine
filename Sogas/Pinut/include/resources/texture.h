@@ -122,13 +122,13 @@ enum class TextureFormat
 
 struct TextureDescriptor
 {
-    void*         data = nullptr;
-    u16           width;
-    u16           height;
-    u16           depth;
+    void*         data          = nullptr;
+    u16           width         = 1;
+    u16           height        = 1;
+    u16           depth         = 1;
     TextureType   type          = TextureType::TEXTURE_2D;
     TextureFormat format        = TextureFormat::R8G8B8A8_SRGB;
-    u8            channel_count = 0;
+    u8            channel_count = 4;
     u8            mip_levels    = 1;
     const char*   name          = nullptr;
 

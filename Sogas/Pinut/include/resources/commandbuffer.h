@@ -32,7 +32,7 @@ class CommandBuffer
                               u32 instance_count,
                               u32 vertex_offset) = 0;
 
-    virtual void bind_descriptor_set(const DescriptorSetHandle& handle)                    = 0;
+    virtual void bind_descriptor_set(const DescriptorSetHandle& handle, u32 set = 0)       = 0;
     virtual void bind_vertex_buffer(const BufferHandle& handle,
                                     const u32           binding,
                                     const u32           offset)                                      = 0;

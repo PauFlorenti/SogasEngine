@@ -121,7 +121,7 @@ void Engine::init()
     // TODO register standalone game components
 
     // TODO Meshes should not be loaded here, but handled by scene.
-    sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cornell_box.obj");
+    sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cube.obj");
 
     // TODO Camera is just temporal. Should be provided by scene.
     engine_camera.set_projection_parameters(glm::radians(60.0f), 1.0f, 0.1f, 10000.0f);
@@ -151,25 +151,25 @@ void Engine::run()
             if (input->get_key(0x57).is_pressed())
             {
                 glm::vec3 new_position =
-                  engine_camera.get_eye() + engine_camera.get_forward() * 0.01f;
+                  engine_camera.get_eye() + engine_camera.get_forward() * 0.1f;
                 engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
             }
             else if (input->get_key(0x53).is_pressed())
             {
                 glm::vec3 new_position =
-                  engine_camera.get_eye() - engine_camera.get_forward() * 0.01f;
+                  engine_camera.get_eye() - engine_camera.get_forward() * 0.1f;
                 engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
             }
             else if (input->get_key(0x41).is_pressed())
             {
                 glm::vec3 new_position =
-                  engine_camera.get_eye() - engine_camera.get_right() * 0.01f;
+                  engine_camera.get_eye() - engine_camera.get_right() * 0.1f;
                 engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
             }
             else if (input->get_key(0x44).is_pressed())
             {
                 glm::vec3 new_position =
-                  engine_camera.get_eye() + engine_camera.get_right() * 0.01f;
+                  engine_camera.get_eye() + engine_camera.get_right() * 0.1f;
                 engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
             }
         }

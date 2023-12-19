@@ -839,7 +839,7 @@ void VulkanDevice::create_pipeline(const resources::PipelineDescriptor& descript
     VkVertexInputAttributeDescription vertex_input_attribute_description[4] = {};
     if (descriptor.vertex_input.attribute_count > 0)
     {
-        ASSERT(descriptor.vertex_input.attribute_count < 4);
+        ASSERT(descriptor.vertex_input.attribute_count <= 4);
 
         for (u32 i = 0; i < descriptor.vertex_input.attribute_count; i++)
         {

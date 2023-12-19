@@ -61,10 +61,24 @@ struct UniformBuffer
 
 using namespace pinut::resources;
 
+struct Material
+{
+    glm::vec3 color = glm::vec3(1.0f);
+
+    TextureHandle albedo_texture;
+    TextureHandle normal_texture;
+    TextureHandle metallic_roughness_texture;
+    TextureHandle ambient_occlusion_texture;
+};
+
 BufferHandle              global_ubo;
-TextureHandle             texture_handle;
+BufferHandle              material_buffer;
 DescriptorSetHandle       descriptor_set_handle;
+DescriptorSetHandle       instance_descriptor_set_handle;
 DescriptorSetLayoutHandle descriptor_set_layout_handle;
+DescriptorSetLayoutHandle instance_descriptor_set_layout_handle;
+
+Material material;
 
 bool RendererModule::start()
 {
@@ -111,25 +125,28 @@ bool RendererModule::start()
     pipeline_descriptor.vertex_input.add_vertex_attribute(
       {0, 0, offsetof(sogas::resources::Vertex, position), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {1, 0, offsetof(sogas::resources::Vertex, color), VertexInputFormatType::VEC3});
+      {1, 0, offsetof(sogas::resources::Vertex, normal), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {2, 0, offsetof(sogas::resources::Vertex, uv), VertexInputFormatType::VEC2});
+      {2, 0, offsetof(sogas::resources::Vertex, color), VertexInputFormatType::VEC3});
+    pipeline_descriptor.vertex_input.add_vertex_attribute(
+      {3, 0, offsetof(sogas::resources::Vertex, uv), VertexInputFormatType::VEC2});
 
     // CREATING UNIFORM BUFFERS
-    BufferDescriptor uniform_buffer_descriptor;
-    uniform_buffer_descriptor.type = BufferType::UNIFORM;
-    uniform_buffer_descriptor.size = sizeof(UniformBuffer);
-    global_ubo                     = renderer->create_buffer(uniform_buffer_descriptor);
+    global_ubo = renderer->create_buffer({sizeof(UniformBuffer), BufferType::UNIFORM});
 
     // CREATING TEXTURE DESCRIPTOR
     u32               texture_data = 0xFF00FFFF;
     TextureDescriptor texture_descriptor{};
-    texture_descriptor.width         = 1;
-    texture_descriptor.height        = 1;
-    texture_descriptor.channel_count = 4;
-    texture_descriptor.data          = &texture_data;
+    texture_descriptor.data = &texture_data;
+    material.albedo_texture = renderer->create_texture(texture_descriptor);
 
-    texture_handle = renderer->create_texture(texture_descriptor);
+    u32 normal_texture_data = 0xFFFFFF00;
+    TextureDescriptor normal_texture_descriptor{};
+    normal_texture_descriptor.data = &normal_texture_data;
+    material.normal_texture        = renderer->create_texture(normal_texture_descriptor);
+
+    glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f);
+    material_buffer = renderer->create_buffer({sizeof(glm::vec3), BufferType::UNIFORM, &color});
 
     // CREATING DESCRIPTOR SET LAYOUTS
     DescriptorSetBindingDescriptor binding = {0,
@@ -137,27 +154,51 @@ bool RendererModule::start()
                                               ShaderStageType::VERTEX,
                                               DescriptorType::UNIFORM};
 
+    DescriptorSetBindingDescriptor instance_binding = {0,
+                                                       1,
+                                                       ShaderStageType::FRAGMENT,
+                                                       DescriptorType::UNIFORM};
+
     DescriptorSetBindingDescriptor texture_binding = {1,
                                                       1,
                                                       ShaderStageType::FRAGMENT,
                                                       DescriptorType::COMBINED_IMAGE_SAMPLER};
 
+    DescriptorSetBindingDescriptor normal_binding = {2,
+                                                     1,
+                                                     ShaderStageType::FRAGMENT,
+                                                     DescriptorType::COMBINED_IMAGE_SAMPLER};
+
     DescriptorSetLayoutDescriptor descriptor_set_layout_descriptor = {};
-    descriptor_set_layout_descriptor.add_binding(binding)
-      .add_binding(texture_binding)
-      .add_name("GLOBAL");
+    descriptor_set_layout_descriptor.add_binding(binding).add_name("GLOBAL");
 
     descriptor_set_layout_handle =
       renderer->create_descriptor_set_layout(descriptor_set_layout_descriptor);
 
+    DescriptorSetLayoutDescriptor instance_descriptor_set_layout_descriptor = {};
+    instance_descriptor_set_layout_descriptor.add_binding(instance_binding)
+      .add_binding(texture_binding)
+      .add_binding(normal_binding)
+      .add_name("INSTANCE");
+
+    instance_descriptor_set_layout_handle =
+      renderer->create_descriptor_set_layout(instance_descriptor_set_layout_descriptor);
+
     pipeline_descriptor.add_descriptor_set_layout(descriptor_set_layout_handle);
+    pipeline_descriptor.add_descriptor_set_layout(instance_descriptor_set_layout_handle);
 
     DescriptorSetDescriptor descriptor_set_descriptor = {};
-    descriptor_set_descriptor.set_layout(descriptor_set_layout_handle)
-      .add_buffer(global_ubo, 0)
-      .add_texture(texture_handle, 1);
-
+    descriptor_set_descriptor.set_layout(descriptor_set_layout_handle).add_buffer(global_ubo, 0);
     descriptor_set_handle = renderer->create_descriptor_set(descriptor_set_descriptor);
+
+    DescriptorSetDescriptor instance_descriptor_set_descriptor = {};
+    instance_descriptor_set_descriptor.set_layout(instance_descriptor_set_layout_handle)
+      .add_buffer(material_buffer, 0)
+      .add_texture(material.albedo_texture, 1)
+      .add_texture(material.normal_texture, 2);
+
+    instance_descriptor_set_handle =
+      renderer->create_descriptor_set(instance_descriptor_set_descriptor);
 
     pipeline_descriptor.add_push_constant({ShaderStageType::VERTEX, sizeof(glm::mat4)});
 
@@ -170,11 +211,14 @@ void RendererModule::stop()
 {
     PINFO("Shutting down renderer.");
 
-    // TODO this should set up a queue, so that it can be destroyed once the gpu has finished working.
     renderer->destroy_descriptor_set_layout(descriptor_set_layout_handle);
+    renderer->destroy_descriptor_set_layout(instance_descriptor_set_layout_handle);
     renderer->destroy_descriptor_set(descriptor_set_handle);
-    renderer->destroy_texture(texture_handle);
+    renderer->destroy_descriptor_set(instance_descriptor_set_handle);
+    renderer->destroy_texture(material.albedo_texture);
+    renderer->destroy_texture(material.normal_texture);
     renderer->destroy_buffer(global_ubo);
+    renderer->destroy_buffer(material_buffer);
 
     renderer->shutdown();
 }
@@ -219,6 +263,7 @@ void RendererModule::render()
 
     auto meshes = sogas::engine::Engine::Get().get_meshes();
 
+    cmd->bind_descriptor_set(instance_descriptor_set_handle, 1);
     auto it = meshes->find("cube");
     if (it != meshes->end())
     {
