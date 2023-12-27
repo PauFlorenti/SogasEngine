@@ -16,8 +16,6 @@ class CommandBuffer;
 } // namespace pinut
 namespace sogas
 {
-namespace resources
-{
 struct Vertex
 {
     glm::vec3 position = glm::vec3(0.0f);
@@ -53,12 +51,11 @@ void init_default_meshes();
 
 void load_mesh(const std::string& name, const std::string& filename);
 
-} // namespace resources
 } // namespace sogas
 
 namespace std
 {
-using namespace sogas::resources;
+using namespace sogas;
 template <>
 struct hash<Vertex>
 {

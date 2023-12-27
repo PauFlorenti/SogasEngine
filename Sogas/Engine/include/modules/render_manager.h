@@ -7,10 +7,7 @@ class CommandBuffer;
 
 namespace sogas
 {
-namespace resources
-{
 class Mesh;
-}
 namespace modules
 {
 class RenderManager
@@ -18,13 +15,13 @@ class RenderManager
     struct RenderKey
     {
         Handle                 owner_handle;
-        const resources::Mesh* mesh = nullptr;
+        const Mesh* mesh = nullptr;
         // TODO material.
         Handle transform;
     };
 
   public:
-    void add_key(Handle owner, const resources::Mesh* mesh);
+    void add_key(Handle owner, const Mesh* mesh);
     void render_all(pinut::resources::CommandBuffer* cmd, Handle camera_handle);
 
   private:

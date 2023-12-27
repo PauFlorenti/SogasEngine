@@ -98,7 +98,7 @@ bool RendererModule::start()
     renderer = pinut::GPUDevice::create(pinut::GraphicsAPI::Vulkan);
     renderer->init(descriptor);
 
-    resources::init_default_meshes();
+    init_default_meshes();
 
     std::vector<u32> vs_buffer, fs_buffer;
 
@@ -131,15 +131,15 @@ bool RendererModule::start()
       .add_viewport(viewport_state)
       .add_rasterization(raster);
 
-    pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(sogas::resources::Vertex)});
+    pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(sogas::Vertex)});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {0, 0, offsetof(sogas::resources::Vertex, position), VertexInputFormatType::VEC3});
+      {0, 0, offsetof(sogas::Vertex, position), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {1, 0, offsetof(sogas::resources::Vertex, normal), VertexInputFormatType::VEC3});
+      {1, 0, offsetof(sogas::Vertex, normal), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {2, 0, offsetof(sogas::resources::Vertex, color), VertexInputFormatType::VEC3});
+      {2, 0, offsetof(sogas::Vertex, color), VertexInputFormatType::VEC3});
     pipeline_descriptor.vertex_input.add_vertex_attribute(
-      {3, 0, offsetof(sogas::resources::Vertex, uv), VertexInputFormatType::VEC2});
+      {3, 0, offsetof(sogas::Vertex, uv), VertexInputFormatType::VEC2});
 
     // CREATING UNIFORM BUFFERS
     global_ubo = renderer->create_buffer({sizeof(UniformBuffer), BufferType::UNIFORM});
@@ -262,7 +262,7 @@ void RendererModule::render()
 {
     renderer->begin_frame();
 
-    static u32  current_image = 0;
+    static u32 current_image = 0;
 
     UniformBuffer ubo{};
 

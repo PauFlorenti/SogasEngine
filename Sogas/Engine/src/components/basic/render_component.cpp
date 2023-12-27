@@ -9,10 +9,7 @@
 
 namespace sogas
 {
-using namespace components;
 DECLARE_OBJECT_MANAGER("render", RenderComponent);
-namespace components
-{
 bool RenderComponent::DrawCall::load(const json& j)
 {
     if (!j["mesh"].is_string())
@@ -22,7 +19,7 @@ bool RenderComponent::DrawCall::load(const json& j)
 
     // TODO Should not be asked to the engine. Make Resources class.
     auto mesh_filename = j["mesh"].get<std::string>();
-    resources::load_mesh(mesh_filename, mesh_filename);
+    load_mesh(mesh_filename, mesh_filename);
     mesh    = Engine::Get().get_meshes()->at(mesh_filename);
     enabled = j.value("enabled", enabled);
     return true;
@@ -62,5 +59,4 @@ void RenderComponent::on_entity_created()
 {
     update_render_manager();
 }
-} // namespace components
 } // namespace sogas

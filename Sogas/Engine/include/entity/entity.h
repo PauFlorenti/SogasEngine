@@ -7,7 +7,7 @@
 
 namespace sogas
 {
-class Entity : public components::BaseComponent
+class Entity : public BaseComponent
 {
   public:
     Entity() = default;

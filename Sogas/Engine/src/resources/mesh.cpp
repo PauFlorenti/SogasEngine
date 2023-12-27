@@ -8,9 +8,6 @@
 
 namespace sogas
 {
-namespace resources
-{
-
 // clang-format off
     std::vector<Vertex> plane_vertices = {
       {glm::vec3( 0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f), glm::vec2(0.0f, 0.0f)},
@@ -250,5 +247,4 @@ void Mesh::destroy()
     device->destroy_buffer(vertex_buffer);
     device->destroy_buffer(index_buffer);
 }
-} // namespace resources
 } // namespace sogas

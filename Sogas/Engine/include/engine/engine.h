@@ -3,10 +3,9 @@
 #include <engine/camera.h>
 #include <modules/module_manager.h>
 
-#include <resources/mesh.h>
-
 namespace sogas
 {
+class Mesh;
 namespace modules
 {
 class InputModule;
@@ -36,7 +35,7 @@ class Engine
         return engine_camera;
     }
 
-    std::map<std::string, sogas::resources::Mesh*>* get_meshes()
+    std::map<std::string, Mesh*>* get_meshes()
     {
         return &meshes;
     };
@@ -47,8 +46,8 @@ class Engine
     static Engine* engine_instance;
 
     // TODO This is temporal. Camera should be in the scene.
-    Camera                                         engine_camera;
-    modules::ModuleManager                         module_manager;
-    std::map<std::string, sogas::resources::Mesh*> meshes;
+    Camera                       engine_camera;
+    modules::ModuleManager       module_manager;
+    std::map<std::string, Mesh*> meshes;
 };
 } // namespace sogas

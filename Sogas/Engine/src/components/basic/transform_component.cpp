@@ -7,10 +7,7 @@
 
 namespace sogas
 {
-using namespace components;
 DECLARE_OBJECT_MANAGER("transform", TransformComponent);
-namespace components
-{
 void TransformComponent::load(const json& j, EntityParser& /*context*/)
 {
     if (j.count("pos"))
@@ -95,5 +92,4 @@ void TransformComponent::from_matrix(glm::mat4 matrix)
     glm::vec4 perspective;
     glm::decompose(matrix, scale, rotation, position, auxiliar, perspective);
 }
-} // namespace components
 } // namespace sogas

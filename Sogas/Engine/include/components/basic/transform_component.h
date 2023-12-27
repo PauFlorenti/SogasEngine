@@ -4,8 +4,6 @@
 
 namespace sogas
 {
-namespace components
-{
 // TODO Maybe a transform class with all this should be created?
 // We may want to have a transform that is not necessary a component.
 class TransformComponent : public BaseComponent
@@ -40,5 +38,4 @@ class TransformComponent : public BaseComponent
     glm::vec3 scale;
     glm::quat rotation;
 };
-} // namespace components
 } // namespace sogas

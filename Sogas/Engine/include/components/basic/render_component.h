@@ -4,17 +4,12 @@
 
 namespace sogas
 {
-namespace resources
-{
 class Mesh;
-}
-namespace components
-{
 class RenderComponent : public BaseComponent
 {
     struct DrawCall
     {
-        const resources::Mesh* mesh = nullptr;
+        const Mesh* mesh = nullptr;
         // TODO Material
         bool enabled{true};
         bool load(const json& j);
@@ -31,5 +26,4 @@ class RenderComponent : public BaseComponent
   private:
     std::vector<DrawCall> draw_calls;
 };
-} // namespace components
 } // namespace sogas

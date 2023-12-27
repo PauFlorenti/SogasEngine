@@ -4,8 +4,6 @@
 
 namespace sogas
 {
-namespace components
-{
 class NameComponent : public BaseComponent
 {
   public:
@@ -19,5 +17,4 @@ class NameComponent : public BaseComponent
     static constexpr size_t max_length = 128;
     char                    name[max_length];
 };
-} // namespace components
 } // namespace sogas

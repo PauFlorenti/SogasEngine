@@ -7,6 +7,7 @@
 #include <modules/module_input.h>
 #include <modules/module_renderer.h>
 #include <platform/platform.h>
+#include <resources/mesh.h>
 
 namespace
 {
@@ -121,7 +122,7 @@ void Engine::init()
 
     // TODO Meshes should not be loaded here, but handled by scene.
     // sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cube.obj");
-    sogas::resources::load_mesh("room", "D:/Meshes/viking-room/source/viking-room.obj");
+    load_mesh("room", "D:/Meshes/viking-room/source/viking-room.obj");
 
     // TODO Camera is just temporal. Should be provided by scene.
     engine_camera.set_projection_parameters(glm::radians(60.0f), 1280.0f / 720.0f, 0.1f, 10000.0f);

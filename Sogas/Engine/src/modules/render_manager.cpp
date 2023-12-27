@@ -14,7 +14,7 @@ namespace modules
 {
 RenderManager render_manager;
 
-void RenderManager::add_key(Handle owner, const resources::Mesh* mesh)
+void RenderManager::add_key(Handle owner, const Mesh* mesh)
 {
     RenderKey key;
     key.owner_handle = owner;
