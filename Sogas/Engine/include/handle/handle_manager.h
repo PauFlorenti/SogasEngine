@@ -4,10 +4,6 @@
 
 namespace sogas
 {
-namespace engine
-{
-namespace handle
-{
 using HandleManagerArray = std::array<HandleManager*, Handle::max_types>;
 
 class HandleManager
@@ -63,6 +59,8 @@ class HandleManager
 
     Handle create_handle();
     void   destroy_handle(Handle h);
+    void   load(Handle h, const json& j, EntityParser& context);
+    void   on_entity_created(Handle h);
 
     void   set_owner(Handle item, Handle owner);
     Handle get_owner(Handle item);
@@ -96,12 +94,11 @@ class HandleManager
 
     std::string name{};
 
-    virtual void create_object(Handle::handle_index index)  = 0;
-    virtual void destroy_object(Handle::handle_index index) = 0;
+    virtual void create_object(Handle::handle_index index)                                    = 0;
+    virtual void destroy_object(Handle::handle_index index)                                   = 0;
+    virtual void load_object(u32 source_internal_index, const json& j, EntityParser& context) = 0;
+    virtual void on_entity_created_object(u32 internal_index)                                 = 0;
 
     // TODO Add vector holding all pending deleted handles.
 };
-
-} // namespace handle
-} // namespace engine
 } // namespace sogas

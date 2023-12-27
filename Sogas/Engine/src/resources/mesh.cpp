@@ -12,16 +12,16 @@ namespace resources
 {
 
 // clang-format off
-    std::vector<sogas::resources::Vertex> plane_vertices = {
-      {glm::vec3(0.5f,  0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec2(0.0f, 1.0f)},
-      {glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f), glm::vec2(1.0f, 1.0f)},
-      {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f)},
-      {glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.7f), glm::vec3(0.0f), glm::vec2(0.0f, 0.0f)},
+    std::vector<Vertex> plane_vertices = {
+      {glm::vec3( 0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f), glm::vec2(0.0f, 0.0f)},
+      {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f), glm::vec2(1.0f, 1.0f)},
+      {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f), glm::vec2(1.0f, 0.0f)},
+      {glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f), glm::vec2(0.0f, 0.0f)},
     };
 
     std::vector<u16> plane_indices = { 0, 1, 2, 0, 2, 3 };
 
-    std::vector<sogas::resources::Vertex> cube_vertices = {
+    std::vector<Vertex> cube_vertices = {
         //Top
         {glm::vec3(-0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec2(0.0f, 0.0f)},  //0
         {glm::vec3(0.5f, 0.5f, -0.5f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec2(1.0f, 0.0f)},  //1
@@ -87,7 +87,7 @@ namespace resources
 
 static void upload_buffer(pinut::resources::BufferHandle buffer, const u32 size, void* data)
 {
-    auto device = sogas::engine::Engine::Get().get_renderer()->get_device();
+    auto device = sogas::Engine::Get().get_renderer()->get_device();
 
     const auto vertex_staging_buffer =
       device->create_buffer({size, pinut::resources::BufferType::STAGING, data});
@@ -98,13 +98,16 @@ static void upload_buffer(pinut::resources::BufferHandle buffer, const u32 size,
 
 void init_default_meshes()
 {
-    auto device = sogas::engine::Engine::Get().get_renderer()->get_device();
-    auto meshes = sogas::engine::Engine::Get().get_meshes();
+    auto device = sogas::Engine::Get().get_renderer()->get_device();
+    auto meshes = sogas::Engine::Get().get_meshes();
 
     Mesh*     plane             = new Mesh();
     const u32 plane_vertex_size = static_cast<u32>(plane_vertices.size() * sizeof(Vertex));
     const u32 plane_index_size  = static_cast<u32>(plane_indices.size() * sizeof(u16));
-    plane->vertex_buffer        = device->create_buffer({plane_vertex_size});
+
+    plane->vertices      = plane_vertices;
+    plane->indices       = plane_indices;
+    plane->vertex_buffer = device->create_buffer({plane_vertex_size});
     plane->index_buffer =
       device->create_buffer({plane_index_size, pinut::resources::BufferType::INDEX});
 
@@ -117,6 +120,8 @@ void init_default_meshes()
     const u32 cube_vertex_size = static_cast<u32>(cube_vertices.size() * sizeof(Vertex));
     const u32 cube_index_size  = static_cast<u32>(cube_indices.size() * sizeof(u16));
 
+    cube->vertices      = cube_vertices;
+    cube->indices       = cube_indices;
     cube->vertex_buffer = device->create_buffer({cube_vertex_size});
     cube->index_buffer =
       device->create_buffer({cube_index_size, pinut::resources::BufferType::INDEX});
@@ -128,7 +133,7 @@ void init_default_meshes()
 
 void load_mesh(const std::string& name, const std::string& filename)
 {
-    auto meshes = sogas::engine::Engine::Get().get_meshes();
+    auto meshes = sogas::Engine::Get().get_meshes();
 
     if (auto mesh = meshes->find(filename); mesh != meshes->end())
     {
@@ -201,7 +206,7 @@ void load_mesh(const std::string& name, const std::string& filename)
         }
     }
 
-    auto device = sogas::engine::Engine::Get().get_renderer()->get_device();
+    auto device = sogas::Engine::Get().get_renderer()->get_device();
 
     const u32 vertex_buffer_size = static_cast<u32>(mesh->vertices.size() * sizeof(Vertex));
     const u32 index_buffer_size  = static_cast<u32>(mesh->indices.size() * sizeof(u16));
@@ -224,13 +229,13 @@ void load_mesh(const std::string& name, const std::string& filename)
     meshes->insert({name, mesh});
 }
 
-void Mesh::draw(pinut::resources::CommandBuffer* cmd)
+void Mesh::draw(pinut::resources::CommandBuffer* cmd) const
 {
     cmd->bind_vertex_buffer(vertex_buffer, 0, 0);
     cmd->draw(0, static_cast<u32>(vertices.size()), 0, 1);
 }
 
-void Mesh::draw_indexed(pinut::resources::CommandBuffer* cmd)
+void Mesh::draw_indexed(pinut::resources::CommandBuffer* cmd) const
 {
     cmd->bind_vertex_buffer(vertex_buffer, 0, 0);
     cmd->bind_index_buffer(index_buffer, pinut::resources::BufferIndexType::UINT16);
@@ -238,7 +243,7 @@ void Mesh::draw_indexed(pinut::resources::CommandBuffer* cmd)
 }
 void Mesh::destroy()
 {
-    auto device = sogas::engine::Engine::Get().get_renderer()->get_device();
+    auto device = sogas::Engine::Get().get_renderer()->get_device();
     vertices.clear();
     indices.clear();
 

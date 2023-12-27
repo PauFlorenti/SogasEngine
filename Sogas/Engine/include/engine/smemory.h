@@ -2,9 +2,6 @@
 
 namespace sogas
 {
-namespace engine
-{
-
 #define kb(size) (size * 1024)
 #define mb(size) (size * 1024 * 1024)
 #define gb(size) (size * 1024 * 1024)
@@ -32,5 +29,4 @@ struct StackAllocator : public Allocator
     u64 total_memory     = 0;
     u64 allocated_memory = 0;
 };
-} // namespace engine
 } // namespace sogas

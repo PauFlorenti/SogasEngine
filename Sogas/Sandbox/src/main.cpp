@@ -2,7 +2,7 @@
 
 int main()
 {
-    std::unique_ptr<sogas::engine::Engine> engine = std::make_unique<sogas::engine::Engine>();
+    std::unique_ptr<sogas::Engine> engine = std::make_unique<sogas::Engine>();
 
     engine->init();
     engine->run();

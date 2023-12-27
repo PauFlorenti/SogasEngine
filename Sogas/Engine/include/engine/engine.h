@@ -12,8 +12,6 @@ namespace modules
 class InputModule;
 class RendererModule;
 } // namespace modules
-namespace engine
-{
 class Engine
 {
   public:
@@ -53,5 +51,4 @@ class Engine
     modules::ModuleManager                         module_manager;
     std::map<std::string, sogas::resources::Mesh*> meshes;
 };
-} // namespace engine
 } // namespace sogas

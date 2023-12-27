@@ -2,12 +2,7 @@
 
 namespace sogas
 {
-namespace engine
-{
-class Scene;
-namespace handle
-{
-
+struct EntityParser;
 class HandleManager;
 
 template <typename object_type>
@@ -42,7 +37,7 @@ class Handle final
     template <typename object_type>
     Handle(object_type* address)
     {
-        auto handle_manager = get_object_manager<std::remove_const<object_type>::type>();
+        auto handle_manager = get_object_manager<std::remove_const_t<object_type>>();
         *this               = handle_manager->get_handle_from_address(address);
     }
 
@@ -58,7 +53,7 @@ class Handle final
 
     handle_index get_external_index(void) const
     {
-        return generation;
+        return index;
     }
 
     bool is_valid() const;
@@ -93,10 +88,29 @@ class Handle final
         return operator==(other) || operator>(other);
     }
 
-    // TODO: Add create function
-    // TODO: Add destroy function
+    //! TODO This should be const
+    template <class object_type>
+    operator object_type*() const
+    {
+        auto handle_manager = get_object_manager<std::remove_const_t<object_type>>();
+        return handle_manager->get_address_from_handle(*this);
+    }
 
-    void load(const nlohmann::json& json_data, sogas::engine::Scene& scene);
+    template <class object_type>
+    Handle create()
+    {
+        auto handle_manager = get_object_manager<object_type>();
+        *this               = handle_manager->create_handle();
+        return *this;
+    }
+
+    void destroy();
+
+    void load(const nlohmann::json& json_data, EntityParser& scene);
+    void on_entity_created();
+
+    void   set_owner(Handle h);
+    Handle get_owner() const;
 
   private:
     handle_type  type : num_bits_types; // The type of the handle
@@ -107,6 +121,4 @@ class Handle final
 
 using HandleVector = std::vector<Handle>;
 
-} // namespace handle
-} // namespace engine
 } // namespace sogas

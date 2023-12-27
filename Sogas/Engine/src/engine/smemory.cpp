@@ -4,9 +4,6 @@
 
 namespace sogas
 {
-namespace engine
-{
-
 static u64 memory_align(const u64 size, const u64 alignment)
 {
     const u64 alignment_mask = alignment - 1;
@@ -72,6 +69,4 @@ void StackAllocator::clear()
 {
     allocated_memory = 0;
 }
-
-} // namespace engine
 } // namespace sogas

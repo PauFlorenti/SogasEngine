@@ -2,9 +2,7 @@
 
 namespace sogas
 {
-namespace engine
-{
-class Scene;
+struct EntityParser;
 namespace components
 {
 class BaseComponent
@@ -12,8 +10,7 @@ class BaseComponent
   public:
     void update(f32 /*delta_time*/){};
     void on_entity_created(){};
-    void load(const nlohmann::json& /*json_file*/, Scene& /*scene*/){};
+    void load(const nlohmann::json& /*json_file*/, EntityParser& /*scene*/){};
 };
 } // namespace components
-} // namespace engine
 } // namespace sogas

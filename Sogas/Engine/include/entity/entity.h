@@ -2,19 +2,16 @@
 
 #include <components/base_component.h>
 #include <handle/handle.h>
+#include <handle/handle_manager.h>
+#include <handle/object_manager.h>
 
 namespace sogas
 {
-namespace engine
-{
-namespace components
-{
-using namespace handle;
-class Entity : public BaseComponent
+class Entity : public components::BaseComponent
 {
   public:
     Entity() = default;
-    ~Entity(){}; // TODO Set all components attach to the entity for pending destroy.
+    ~Entity();
 
     Handle get(Handle::handle_type component_type) const
     {
@@ -35,11 +32,13 @@ class Entity : public BaseComponent
 
     const std::string get_name() const;
 
-    void load(const nlohmann::json& json_file, Scene& scene);
+    void load(const nlohmann::json& json_file, EntityParser& scene);
+    void on_entity_created();
 
   private:
-    Handle components[Handle::max_types];
+      Handle components[Handle::max_types];
 };
-} // namespace components
-} // namespace engine
+
+template<>
+ObjectManager<Entity>* get_object_manager<Entity>();
 } // namespace sogas

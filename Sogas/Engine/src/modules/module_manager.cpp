@@ -111,7 +111,7 @@ void ModuleManager::parse_module_config(const std::string& config_file)
     update_modules.clear();
     render_modules.clear();
 
-    auto json_file = engine::platform::load_json(config_file);
+    auto json_file = platform::load_json(config_file);
 
     json json_update_modules = json_file["update"];
     json json_render_modules = json_file["render"];

@@ -26,6 +26,7 @@ this main one.
 - [x] Load .obj files.
 - [ ] Load .gltf files.
 - [ ] Create transform component.
+- [ ] Create camera component.
 - [ ] Create render component.
     - [ ] Create mesh data.
     - [ ] Create material data.

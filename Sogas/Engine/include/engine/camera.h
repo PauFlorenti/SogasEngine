@@ -2,8 +2,6 @@
 
 namespace sogas
 {
-namespace engine
-{
 class Camera
 {
   public:
@@ -59,5 +57,4 @@ class Camera
 
     bool is_ortho = false;
 };
-} // namespace engine
 } // namespace sogas

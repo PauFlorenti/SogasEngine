@@ -4,10 +4,6 @@
 
 namespace sogas
 {
-namespace engine
-{
-namespace handle
-{
 template <typename object_type>
 class ObjectManager : public HandleManager
 {
@@ -78,7 +74,7 @@ class ObjectManager : public HandleManager
     void create_object(Handle::handle_index internal_index) override
     {
         object_type* address = objects + internal_index;
-        new (address) object_type(); // Call constructor into object address.
+        new (address) object_type; // Call constructor into object address.
     }
 
     void destroy_object(Handle::handle_index internal_index) override
@@ -87,20 +83,27 @@ class ObjectManager : public HandleManager
         address->~object_type();
     }
 
+    void load_object(u32 internal_index, const json& j, EntityParser& context) override
+    {
+        object_type* address = objects + internal_index;
+        address->load(j, context);
+    }
+
+    void on_entity_created_object(u32 internal_index) override
+    {
+        object_type* address = objects + internal_index;
+        address->on_entity_created();
+    }
+
     u8*          memory;
     object_type* objects = nullptr;
 };
 
-#define DECLARE_OBJECT_MANAGER(object_name, object_class_name)                                  \
-    sogas::engine::handle::ObjectManager<object_class_name> object_manager_##object_class_name( \
-      object_name);                                                                             \
-    template <>                                                                                 \
-    sogas::engine::handle::ObjectManager<object_class_name>*                                    \
-    get_object_manager<object_class_name>()                                                     \
-    {                                                                                           \
-        return &object_manager_##object_class_name;                                             \
+#define DECLARE_OBJECT_MANAGER(object_name, object_class_name)                        \
+    ObjectManager<object_class_name> object_manager_##object_class_name(object_name); \
+    template <>                                                                       \
+    ObjectManager<object_class_name>* get_object_manager<object_class_name>()         \
+    {                                                                                 \
+        return &object_manager_##object_class_name;                                   \
     }
-
-} // namespace handle
-} // namespace engine
 } // namespace sogas

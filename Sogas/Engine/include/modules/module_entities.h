@@ -24,8 +24,8 @@ class EntityModule : public IModule
     void resize_window(u32, u32) override{};
 
   private:
-    std::vector<std::shared_ptr<engine::handle::HandleManager>> managers_to_update;
-    //std::vector<std::shared_ptr<HandleManager>> managers_to_render_debug;
+    std::vector<HandleManager*> managers_to_update;
+    std::vector<HandleManager*> managers_to_render_debug;
 };
 } // namespace modules
 } // namespace sogas

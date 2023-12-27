@@ -7,7 +7,7 @@
 #ifdef _WIN64
 namespace
 {
-using namespace sogas::engine::platform;
+using namespace sogas::platform;
 
 // Called every time the application receives a message
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -74,7 +74,7 @@ static void resize_window(const Window_info& info, const RECT& rect)
 } // namespace
 #endif
 
-namespace sogas::engine::platform
+namespace sogas::platform
 {
 #ifdef _WIN64
 
@@ -323,4 +323,4 @@ json load_json(const std::string& filename)
 #else
 #error "Only win64 platform implemented at the moment."
 #endif
-} // namespace sogas::engine::platform
+} // namespace sogas::platform

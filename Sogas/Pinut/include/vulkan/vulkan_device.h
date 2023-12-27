@@ -12,10 +12,7 @@
 
 namespace sogas
 {
-namespace engine
-{
 struct StackAllocator;
-}
 } // namespace sogas
 
 namespace pinut

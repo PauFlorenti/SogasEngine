@@ -31,8 +31,14 @@
 #endif
 
 // Third party includes
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#pragma warning(disable : 4201)
+#include <glm/ext/quaternion_float.hpp>
+#pragma warning(default : 4201)
+#include <glm/ext/quaternion_common.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <nlohmann/json.hpp>
 
 // own external includes.
@@ -40,7 +46,9 @@
 
 // engine includes
 #include <engine/defines.h>
+#include <engine/math.h>
 #include <engine/smemory.h>
+#include <handle/handle.h>
 #include <platform/platform.h>
 
 #endif //PCH_HPP

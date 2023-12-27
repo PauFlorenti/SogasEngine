@@ -6,17 +6,11 @@
 
 namespace sogas
 {
-namespace engine
-{
-namespace handle
-{
 using namespace components;
 DECLARE_OBJECT_MANAGER("name", NameComponent);
-} // namespace handle
+
 namespace components
 {
-using namespace handle;
-
 std::unordered_map<std::string, Handle> NameComponent::all_names;
 
 const std::string NameComponent::get_name() const
@@ -36,6 +30,10 @@ void NameComponent::set_name(const std::string& new_name)
         //all_names[name] = Handle(this);
     }
 }
+void NameComponent::load(const json& j, EntityParser& /*context*/)
+{
+    ASSERT(j.is_string());
+    set_name(j.get<std::string>().c_str());
+}
 } // namespace components
-} // namespace engine
 } // namespace sogas

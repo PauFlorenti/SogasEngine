@@ -7,7 +7,7 @@
 using json = nlohmann::json;
 
 #ifdef _WIN64
-namespace sogas::engine::platform
+namespace sogas::platform
 {
 class Window;
 
@@ -47,7 +47,7 @@ i32            string_format(char* dest, const char* format, va_list va_args);
 
 // File stuff
 json load_json(const std::string& filename);
-} // namespace sogas::engine::platform
+} // namespace sogas::platform
 
 #else
 #error "No other platform is implemented."

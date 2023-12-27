@@ -2,8 +2,6 @@
 
 namespace sogas
 {
-namespace engine
-{
 void Camera::look_at(glm::vec3 new_eye, glm::vec3 new_target, glm::vec3 new_up)
 {
     eye    = new_eye;
@@ -55,5 +53,4 @@ void Camera::update_view_projection()
 {
     view_projection = view * projection;
 }
-} // namespace engine
 } // namespace sogas

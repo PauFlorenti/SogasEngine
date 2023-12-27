@@ -4,10 +4,6 @@
 
 namespace sogas
 {
-namespace engine
-{
-namespace handle
-{
 u32                                   HandleManager::next_type_of_handle_manager = 1;
 HandleManagerArray                    HandleManager::all_handle_managers;
 std::map<std::string, HandleManager*> HandleManager::all_handle_managers_by_name;
@@ -33,6 +29,9 @@ void HandleManager::init(const u32 max_objects)
 
     all_handle_managers[type]               = this;
     all_handle_managers_by_name[get_name()] = this;
+
+    external_to_internal.resize(max_objects);
+    internal_to_external.resize(max_objects);
 
     u32 i{0};
     for (auto& index : external_to_internal)
@@ -109,6 +108,27 @@ void HandleManager::destroy_handle(Handle h)
     external_data.current_generation++;
 }
 
+void HandleManager::load(Handle h, const json& j, EntityParser& context)
+{
+    if (!h.is_valid())
+    {
+        return;
+    }
+
+    load_object(external_to_internal[h.get_external_index()].internal_index, j, context);
+}
+
+void HandleManager::on_entity_created(Handle h)
+{
+    if (!h.is_valid())
+    {
+        return;
+    }
+
+    auto& external_data = external_to_internal[h.get_external_index()];
+    on_entity_created_object(external_data.internal_index);
+}
+
 void HandleManager::set_owner(Handle item, Handle owner)
 {
     ASSERT(item.get_type() == type);
@@ -160,7 +180,4 @@ void HandleManager::destroy_all_pending_objects()
 
     // TODO delete all pending objects.
 }
-
-} // namespace handle
-} // namespace engine
 } // namespace sogas

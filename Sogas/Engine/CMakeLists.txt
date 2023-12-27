@@ -15,12 +15,11 @@ target_include_directories(engine
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../Pinut/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external/json/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external/stb
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../Logger/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tinyobj
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tinygltf
 )

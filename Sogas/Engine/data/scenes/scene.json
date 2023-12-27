@@ -1,0 +1,15 @@
+[
+	{
+		"entity": {
+			"name": "viking-room",
+			"transform": {
+				"pos": "0 0 0"
+			},
+			"render":[
+				{
+					"mesh": "D:/Meshes/viking-room/source/viking-room.obj"
+				}
+			]
+		}
+	}
+]

@@ -1,26 +1,32 @@
 #include "pch.hpp"
 
-#include <components/entity.h>
+#include <entity/entity.h>
+#include <entity/entity_parser.h>
 #include <handle/object_manager.h>
 
 namespace sogas
 {
-namespace engine
-{
-namespace handle
-{
-// TODO Fix so that macro does not have to go into handle namespace.
-using namespace components;
 DECLARE_OBJECT_MANAGER("entity", Entity);
-} // namespace handle
-namespace components
+
+Entity::~Entity()
 {
+    // Component i = 0 is not valid.
+    for (u32 i = 1; i < HandleManager::get_number_of_defined_types(); ++i)
+    {
+        if (components[i].is_valid())
+        {
+            components[i].destroy();
+        }
+    }
+}
+
 void Entity::add_component(Handle::handle_type type, Handle component)
 {
     ASSERT(type < Handle::max_types);
     ASSERT(!components[type].is_valid());
 
     components[type] = component;
+    component.set_owner(Handle(this));
 }
 
 void Entity::add_component(Handle component)
@@ -34,7 +40,7 @@ const std::string Entity::get_name() const
     return {};
 }
 
-void Entity::load(const nlohmann::json& json_file, Scene& scene)
+void Entity::load(const nlohmann::json& json_file, EntityParser& scene)
 {
     for (const auto& component : json_file.items())
     {
@@ -43,8 +49,8 @@ void Entity::load(const nlohmann::json& json_file, Scene& scene)
 
 #ifndef NDEBUG
         PINFO("Parsing component %s from json scene %s.",
-             component_name.c_str(),
-             component_data.dump().c_str());
+              component_name.c_str(),
+              component_data.dump().c_str());
 #endif
 
         auto object_manager = HandleManager::get_by_name(component_name);
@@ -70,6 +76,14 @@ void Entity::load(const nlohmann::json& json_file, Scene& scene)
     }
 }
 
-} // namespace components
-} // namespace engine
+void Entity::on_entity_created()
+{
+    for (u32 i = 0; i < HandleManager::get_number_of_defined_types(); ++i)
+    {
+        if (components[i].is_valid())
+        {
+            components[i].on_entity_created();
+        }
+    }
+}
 } // namespace sogas

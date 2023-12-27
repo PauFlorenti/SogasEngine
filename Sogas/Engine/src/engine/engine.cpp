@@ -2,6 +2,7 @@
 #include "pch.hpp"
 
 #include <engine/engine.h>
+#include <modules/module_boot.h>
 #include <modules/module_entities.h>
 #include <modules/module_input.h>
 #include <modules/module_renderer.h>
@@ -9,7 +10,7 @@
 
 namespace
 {
-using namespace sogas::engine::platform;
+using namespace sogas::platform;
 Window_id window;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -31,7 +32,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_SIZE:
             RECT r;
             GetClientRect(hWnd, &r);
-            sogas::engine::Engine::Get().resize(r.right - r.left, r.bottom - r.top);
+            sogas::Engine::Get().resize(r.right - r.left, r.bottom - r.top);
             break;
 
         case WM_SYSCHAR:
@@ -52,13 +53,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_SYSKEYUP:
         case WM_KEYDOWN:
         {
-            auto keyboard_device = sogas::engine::Engine::Get().get_input()->get_keyboard_device();
+            auto keyboard_device = sogas::Engine::Get().get_input()->get_keyboard_device();
             keyboard_device->processMsg(hWnd, message, wParam, lParam);
             break;
         }
         case WM_KEYUP:
         {
-            auto keyboard_device = sogas::engine::Engine::Get().get_input()->get_keyboard_device();
+            auto keyboard_device = sogas::Engine::Get().get_input()->get_keyboard_device();
             keyboard_device->processMsg(hWnd, message, wParam, lParam);
             if (wParam == VK_ESCAPE)
                 PostQuitMessage(0);
@@ -82,9 +83,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 namespace sogas
 {
-namespace engine
-{
-
 Engine* Engine::engine_instance = nullptr;
 
 Engine& Engine::Get()
@@ -117,15 +115,17 @@ void Engine::init()
     module_manager.register_module(std::make_shared<modules::InputModule>("input"));
     module_manager.register_module(
       std::make_shared<modules::RendererModule>("renderer", platform::get_window_handle(window)));
+    module_manager.register_module(std::make_shared<modules::BootModule>("boot"));
 
     // TODO register standalone game components
 
     // TODO Meshes should not be loaded here, but handled by scene.
-    sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cube.obj");
+    // sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cube.obj");
+    sogas::resources::load_mesh("room", "D:/Meshes/viking-room/source/viking-room.obj");
 
     // TODO Camera is just temporal. Should be provided by scene.
-    engine_camera.set_projection_parameters(glm::radians(60.0f), 1.0f, 0.1f, 10000.0f);
-    engine_camera.look_at(glm::vec3(0.0f, 0.0f, -100.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    engine_camera.set_projection_parameters(glm::radians(60.0f), 1280.0f / 720.0f, 0.1f, 10000.0f);
+    engine_camera.look_at(glm::vec3(-15.0f, 25.0f, -15.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
     module_manager.boot();
 }
@@ -162,15 +162,31 @@ void Engine::run()
             }
             else if (input->get_key(0x41).is_pressed())
             {
-                glm::vec3 new_position =
-                  engine_camera.get_eye() - engine_camera.get_right() * 0.1f;
+                glm::vec3 new_position = engine_camera.get_eye() - engine_camera.get_right() * 0.1f;
                 engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
             }
             else if (input->get_key(0x44).is_pressed())
             {
-                glm::vec3 new_position =
-                  engine_camera.get_eye() + engine_camera.get_right() * 0.1f;
+                glm::vec3 new_position = engine_camera.get_eye() + engine_camera.get_right() * 0.1f;
                 engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+            else if (input->get_key(0x5A).is_pressed())
+            {
+                glm::vec3 new_position = engine_camera.get_eye() + engine_camera.get_up() * 0.1f;
+                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+            else if (input->get_key(0x58).is_pressed())
+            {
+                glm::vec3 new_position = engine_camera.get_eye() - engine_camera.get_up() * 0.1f;
+                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
+            }
+            else if (input->get_key(0x51).is_pressed())
+            {
+                const auto view     = engine_camera.get_view();
+                glm::quat  rotation = glm::quat(view);
+            }
+            else if (input->get_key(0x52).is_pressed())
+            {
             }
         }
         //! TODO End temporal
@@ -219,6 +235,4 @@ void Engine::do_frame()
     module_manager.update(0.0f);
     module_manager.render();
 }
-
-} // namespace engine
 } // namespace sogas

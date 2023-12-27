@@ -4,7 +4,7 @@
 
 #pragma warning(disable : 4201)
 #define GLM_ENABLE_EXPERIMENTAL
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 #pragma warning(default : 4201)
 
 namespace pinut
@@ -21,7 +21,7 @@ namespace resources
 struct Vertex
 {
     glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 normal   = glm::vec3(0.0f);
+    glm::vec3 normal   = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 color    = glm::vec3(1.0f);
     glm::vec2 uv       = glm::vec2(0.0f);
 
@@ -39,14 +39,14 @@ class Mesh
     {
         destroy();
     }
-    void draw(pinut::resources::CommandBuffer* cmd);
-    void draw_indexed(pinut::resources::CommandBuffer* cmd);
+    void draw(pinut::resources::CommandBuffer* cmd) const;
+    void draw_indexed(pinut::resources::CommandBuffer* cmd) const;
     void destroy();
 
-    std::vector<Vertex>                   vertices;
-    std::vector<u16>                      indices;
-    pinut::resources::BufferHandle        vertex_buffer{pinut::resources::invalid_buffer};
-    pinut::resources::BufferHandle        index_buffer{pinut::resources::invalid_buffer};
+    std::vector<Vertex>            vertices;
+    std::vector<u16>               indices;
+    pinut::resources::BufferHandle vertex_buffer{pinut::resources::invalid_buffer};
+    pinut::resources::BufferHandle index_buffer{pinut::resources::invalid_buffer};
 };
 
 void init_default_meshes();

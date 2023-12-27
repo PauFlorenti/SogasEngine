@@ -1,6 +1,7 @@
 #include "pch.hpp"
 
 #include <modules/module_renderer.h>
+#include <modules/render_manager.h>
 #include <resources/pipeline.h>
 #include <resources/resources.h>
 #include <resources/shader_state.h>
@@ -18,8 +19,6 @@
 #error "Only win64 platform implemented at the moment."
 #endif
 
-// TODO remove. Renderer should not calculate dt.
-#include <chrono>
 // TODO engine and camera are temporal
 #include <engine/camera.h>
 #include <engine/engine.h>
@@ -59,6 +58,14 @@ struct UniformBuffer
     glm::mat4 proj;
 };
 
+struct LightData
+{
+    glm::vec3 position     = glm::vec3(0.0f, 5.0f, 0.0f);
+    f32       intensity    = 1.0f;
+    glm::vec3 color        = glm::vec3(1.0f);
+    f32       max_distance = 100.0f;
+};
+
 using namespace pinut::resources;
 
 struct Material
@@ -72,6 +79,7 @@ struct Material
 };
 
 BufferHandle              global_ubo;
+BufferHandle              light_ubo;
 BufferHandle              material_buffer;
 DescriptorSetHandle       descriptor_set_handle;
 DescriptorSetHandle       instance_descriptor_set_handle;
@@ -89,6 +97,8 @@ bool RendererModule::start()
 
     renderer = pinut::GPUDevice::create(pinut::GraphicsAPI::Vulkan);
     renderer->init(descriptor);
+
+    resources::init_default_meshes();
 
     std::vector<u32> vs_buffer, fs_buffer;
 
@@ -135,17 +145,32 @@ bool RendererModule::start()
     global_ubo = renderer->create_buffer({sizeof(UniformBuffer), BufferType::UNIFORM});
 
     // CREATING TEXTURE DESCRIPTOR
-    u32               texture_data = 0xFF00FFFF;
-    TextureDescriptor texture_descriptor{};
-    texture_descriptor.data = &texture_data;
-    material.albedo_texture = renderer->create_texture(texture_descriptor);
+    i32  w, h, c;
+    auto pixels =
+      stbi_load("D:/Meshes/viking-room/textures/texture.png", &w, &h, &c, STBI_rgb_alpha);
 
-    u32 normal_texture_data = 0xFFFFFF00;
+    ASSERT(pixels);
+
+    //u32               texture_data = 0xFF00FFFF;
+    TextureDescriptor texture_descriptor{};
+    texture_descriptor.width         = w;
+    texture_descriptor.height        = h;
+    texture_descriptor.channel_count = 4;
+    texture_descriptor.data          = pixels;
+    material.albedo_texture          = renderer->create_texture(texture_descriptor);
+
+    stbi_image_free(pixels);
+
+    u32               normal_texture_data = 0xFFFFFF00;
     TextureDescriptor normal_texture_descriptor{};
     normal_texture_descriptor.data = &normal_texture_data;
     material.normal_texture        = renderer->create_texture(normal_texture_descriptor);
 
-    glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f);
+    LightData light{};
+    light.max_distance = 10.0f;
+    light_ubo          = renderer->create_buffer({sizeof(LightData), BufferType::UNIFORM, &light});
+
+    glm::vec3 color = glm::vec3(1.0f);
     material_buffer = renderer->create_buffer({sizeof(glm::vec3), BufferType::UNIFORM, &color});
 
     // CREATING DESCRIPTOR SET LAYOUTS
@@ -153,6 +178,11 @@ bool RendererModule::start()
                                               1,
                                               ShaderStageType::VERTEX,
                                               DescriptorType::UNIFORM};
+
+    DescriptorSetBindingDescriptor light_binding = {1,
+                                                    1,
+                                                    ShaderStageType::FRAGMENT,
+                                                    DescriptorType::UNIFORM};
 
     DescriptorSetBindingDescriptor instance_binding = {0,
                                                        1,
@@ -170,7 +200,9 @@ bool RendererModule::start()
                                                      DescriptorType::COMBINED_IMAGE_SAMPLER};
 
     DescriptorSetLayoutDescriptor descriptor_set_layout_descriptor = {};
-    descriptor_set_layout_descriptor.add_binding(binding).add_name("GLOBAL");
+    descriptor_set_layout_descriptor.add_binding(binding)
+      .add_binding(light_binding)
+      .add_name("GLOBAL");
 
     descriptor_set_layout_handle =
       renderer->create_descriptor_set_layout(descriptor_set_layout_descriptor);
@@ -188,7 +220,9 @@ bool RendererModule::start()
     pipeline_descriptor.add_descriptor_set_layout(instance_descriptor_set_layout_handle);
 
     DescriptorSetDescriptor descriptor_set_descriptor = {};
-    descriptor_set_descriptor.set_layout(descriptor_set_layout_handle).add_buffer(global_ubo, 0);
+    descriptor_set_descriptor.set_layout(descriptor_set_layout_handle)
+      .add_buffer(global_ubo, 0)
+      .add_buffer(light_ubo, 1);
     descriptor_set_handle = renderer->create_descriptor_set(descriptor_set_descriptor);
 
     DescriptorSetDescriptor instance_descriptor_set_descriptor = {};
@@ -218,6 +252,7 @@ void RendererModule::stop()
     renderer->destroy_texture(material.albedo_texture);
     renderer->destroy_texture(material.normal_texture);
     renderer->destroy_buffer(global_ubo);
+    renderer->destroy_buffer(light_ubo);
     renderer->destroy_buffer(material_buffer);
 
     renderer->shutdown();
@@ -227,23 +262,17 @@ void RendererModule::render()
 {
     renderer->begin_frame();
 
-    static auto start_time    = std::chrono::high_resolution_clock::now();
     static u32  current_image = 0;
-
-    auto current_time = std::chrono::high_resolution_clock::now();
-    f32  dt =
-      std::chrono::duration<f32, std::chrono::seconds::period>(current_time - start_time).count();
 
     UniformBuffer ubo{};
 
-    auto camera = sogas::engine::Engine::Get().get_camera();
+    auto camera = sogas::Engine::Get().get_camera();
     ubo.view    = camera.get_view();
     ubo.proj    = camera.get_projection();
     ubo.proj[1][1] *= -1;
 
-    glm::mat4 model =
-      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
-      glm::rotate(glm::mat4(1.0f), dt * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    auto model = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, 0.0f, 0.0f)) *
+                 glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     auto data = renderer->map_buffer(global_ubo, sizeof(ubo));
     memcpy(data, &ubo, sizeof(ubo));
@@ -261,14 +290,8 @@ void RendererModule::render()
 
     cmd->bind_descriptor_set(descriptor_set_handle);
 
-    auto meshes = sogas::engine::Engine::Get().get_meshes();
-
     cmd->bind_descriptor_set(instance_descriptor_set_handle, 1);
-    auto it = meshes->find("cube");
-    if (it != meshes->end())
-    {
-        it->second->draw_indexed(cmd);
-    }
+    render_manager.render_all(cmd, Handle());
 
     renderer->end_frame();
 

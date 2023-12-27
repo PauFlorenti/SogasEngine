@@ -1,0 +1,13 @@
+{
+	"sizes": {
+		"default": 128,
+		"entity": 64,
+		"transform": 64
+	},
+	"init_order": {
+		"entity": 100,
+		"transform": 90
+	},
+	"update": [],
+	"render_debug": []
+}
