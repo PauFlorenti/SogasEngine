@@ -15,6 +15,7 @@ class TransformComponent : public BaseComponent
 
     void lookAt(glm::vec3 pos, glm::vec3 target, glm::vec3 up);
     void set_euler_angles(f32 yaw, f32 pitch, f32 roll);
+    void get_euler_angles(f32* yaw, f32* pitch, f32* roll = nullptr);
 
     // clang-format off
     void set_rotation(glm::quat new_rotation) { rotation = new_rotation; }
@@ -34,8 +35,8 @@ class TransformComponent : public BaseComponent
     void      from_matrix(glm::mat4 matrix);
 
   private:
-    glm::vec3 position;
-    glm::vec3 scale;
-    glm::quat rotation;
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 scale    = glm::vec3(1.0f);
+    glm::quat rotation = glm::quat();
 };
 } // namespace sogas

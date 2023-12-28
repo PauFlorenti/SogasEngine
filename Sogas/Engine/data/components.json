@@ -8,6 +8,8 @@
 		"entity": 100,
 		"transform": 90
 	},
-	"update": [],
+	"update": [
+		"pau"
+	],
 	"render_debug": []
 }

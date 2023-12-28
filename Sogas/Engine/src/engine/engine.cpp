@@ -1,6 +1,8 @@
 
 #include "pch.hpp"
 
+#include <chrono>
+#include <engine/clock.h>
 #include <engine/engine.h>
 #include <modules/module_boot.h>
 #include <modules/module_entities.h>
@@ -84,7 +86,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 namespace sogas
 {
-Engine* Engine::engine_instance = nullptr;
+Engine*    Engine::engine_instance = nullptr;
+static f64 time_stamp;
 
 Engine& Engine::Get()
 {
@@ -120,15 +123,15 @@ void Engine::init()
 
     // TODO register standalone game components
 
-    // TODO Meshes should not be loaded here, but handled by scene.
-    // sogas::resources::load_mesh("cube", "../../external/tinyobj/models/cube.obj");
-    load_mesh("room", "D:/Meshes/viking-room/source/viking-room.obj");
-
     // TODO Camera is just temporal. Should be provided by scene.
     engine_camera.set_projection_parameters(glm::radians(60.0f), 1280.0f / 720.0f, 0.1f, 10000.0f);
     engine_camera.look_at(glm::vec3(-15.0f, 25.0f, -15.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
     module_manager.boot();
+
+    clock = new Clock();
+    start_clock(clock);
+    update_clock(clock);
 }
 
 void Engine::run()
@@ -145,6 +148,10 @@ void Engine::run()
     while (!should_quit)
     {
         should_quit = platform::peek_message();
+
+        update_clock(clock);
+        f64 current_time = clock->elapsed_time;
+        delta_time = (current_time - last_time) / 10000;
 
         //! TODO Start temporal
         if (auto input = get_input())
@@ -198,6 +205,9 @@ void Engine::run()
 
 void Engine::shutdown()
 {
+    stop_clock(clock);
+    delete clock;
+
     PDEBUG("Shuting down engine!");
     platform::remove_window(window);
 
@@ -233,7 +243,7 @@ void Engine::do_frame()
     // Update Input
     // Update physics
     // Update graphics
-    module_manager.update(0.0f);
+    module_manager.update((f32)delta_time);
     module_manager.render();
 }
 } // namespace sogas

@@ -65,6 +65,22 @@ void TransformComponent::set_euler_angles(f32 yaw, f32 pitch, f32 roll)
     rotation = glm::quat(glm::vec3(pitch, yaw, roll));
 }
 
+void TransformComponent::get_euler_angles(f32* yaw, f32* pitch, f32* roll)
+{
+    const auto forward = get_forward();
+    vector_to_yaw_pitch(forward, yaw, pitch);
+
+    if (roll)
+    {
+        const auto roll_zero_left = glm::normalize(glm::cross(glm::vec3(0, 1, 0), forward));
+        const auto roll_zero_up   = glm::normalize(glm::cross(forward, roll_zero_left));
+        const auto current_left   = -glm::normalize(get_right());
+
+        *roll =
+          atan2f(glm::dot(current_left, roll_zero_up), glm::dot(current_left, roll_zero_left));
+    }
+}
+
 glm::vec3 TransformComponent::get_forward() const
 {
     return glm::normalize(as_matrix()[2]);

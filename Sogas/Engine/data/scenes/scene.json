@@ -3,13 +3,15 @@
 		"entity": {
 			"name": "viking-room",
 			"transform": {
-				"pos": "0 0 0"
+				"pos": "0 0 0",
+				"euler": "0 180 0"
 			},
 			"render":[
 				{
 					"mesh": "D:/Meshes/viking-room/source/viking-room.obj"
 				}
-			]
+			],
+			"pau":{}
 		}
 	}
 ]

@@ -5,6 +5,7 @@
 
 namespace sogas
 {
+struct Clock;
 class Mesh;
 namespace modules
 {
@@ -45,9 +46,13 @@ class Engine
 
     static Engine* engine_instance;
 
-    // TODO This is temporal. Camera should be in the scene.
+    // TODO This is temporal. Camera should be in the scene as an entity.
     Camera                       engine_camera;
     modules::ModuleManager       module_manager;
     std::map<std::string, Mesh*> meshes;
+    
+    Clock*                       clock = nullptr;
+    f64                          delta_time{0};
+    f64                          last_time{0};
 };
 } // namespace sogas

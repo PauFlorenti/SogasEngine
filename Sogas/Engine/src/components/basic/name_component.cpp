@@ -27,6 +27,7 @@ void NameComponent::set_name(const std::string& new_name)
         //all_names[name] = Handle(this);
     }
 }
+
 void NameComponent::load(const json& j, EntityParser& /*context*/)
 {
     ASSERT(j.is_string());
