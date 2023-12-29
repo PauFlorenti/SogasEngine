@@ -123,10 +123,6 @@ void Engine::init()
 
     // TODO register standalone game components
 
-    // TODO Camera is just temporal. Should be provided by scene.
-    engine_camera.set_projection_parameters(glm::radians(60.0f), 1280.0f / 720.0f, 0.1f, 10000.0f);
-    engine_camera.look_at(glm::vec3(-15.0f, 25.0f, -15.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
     module_manager.boot();
 
     clock = new Clock();
@@ -152,52 +148,6 @@ void Engine::run()
         update_clock(clock);
         f64 current_time = clock->elapsed_time;
         delta_time = (current_time - last_time) / 10000;
-
-        //! TODO Start temporal
-        if (auto input = get_input())
-        {
-            if (input->get_key(0x57).is_pressed())
-            {
-                glm::vec3 new_position =
-                  engine_camera.get_eye() + engine_camera.get_forward() * 0.1f;
-                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
-            }
-            else if (input->get_key(0x53).is_pressed())
-            {
-                glm::vec3 new_position =
-                  engine_camera.get_eye() - engine_camera.get_forward() * 0.1f;
-                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
-            }
-            else if (input->get_key(0x41).is_pressed())
-            {
-                glm::vec3 new_position = engine_camera.get_eye() - engine_camera.get_right() * 0.1f;
-                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
-            }
-            else if (input->get_key(0x44).is_pressed())
-            {
-                glm::vec3 new_position = engine_camera.get_eye() + engine_camera.get_right() * 0.1f;
-                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
-            }
-            else if (input->get_key(0x5A).is_pressed())
-            {
-                glm::vec3 new_position = engine_camera.get_eye() + engine_camera.get_up() * 0.1f;
-                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
-            }
-            else if (input->get_key(0x58).is_pressed())
-            {
-                glm::vec3 new_position = engine_camera.get_eye() - engine_camera.get_up() * 0.1f;
-                engine_camera.look_at(new_position, new_position + engine_camera.get_forward());
-            }
-            else if (input->get_key(0x51).is_pressed())
-            {
-                const auto view     = engine_camera.get_view();
-                glm::quat  rotation = glm::quat(view);
-            }
-            else if (input->get_key(0x52).is_pressed())
-            {
-            }
-        }
-        //! TODO End temporal
 
         do_frame();
     }

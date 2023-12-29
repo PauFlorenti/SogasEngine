@@ -24,7 +24,7 @@ void NameComponent::set_name(const std::string& new_name)
     if (it == all_names.end())
     {
         strcpy_s(name, new_name.c_str());
-        //all_names[name] = Handle(this);
+        all_names[name] = Handle(this);
     }
 }
 
@@ -32,5 +32,16 @@ void NameComponent::load(const json& j, EntityParser& /*context*/)
 {
     ASSERT(j.is_string());
     set_name(j.get<std::string>().c_str());
+}
+
+Handle get_entity_by_name(const std::string& name)
+{
+    auto it = NameComponent::all_names.find(name);
+    if (it == NameComponent::all_names.end())
+    {
+        return Handle();
+    }
+
+    return it->second.get_owner();
 }
 } // namespace sogas

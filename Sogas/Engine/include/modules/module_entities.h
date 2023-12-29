@@ -27,5 +27,7 @@ class EntityModule : public IModule
     std::vector<HandleManager*> managers_to_update;
     std::vector<HandleManager*> managers_to_render_debug;
 };
+
+extern Handle get_entity_by_name(const std::string& name);
 } // namespace modules
 } // namespace sogas

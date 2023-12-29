@@ -9,7 +9,9 @@
 		"transform": 90
 	},
 	"update": [
-		"pau"
+		"pau",
+		"camera",
+		"flyover_camera"
 	],
 	"render_debug": []
 }

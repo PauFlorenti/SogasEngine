@@ -31,10 +31,10 @@ class Engine
     std::shared_ptr<modules::InputModule>    get_input();
     std::shared_ptr<modules::RendererModule> get_renderer();
     // TODO Same as below. Temporal.
-    Camera& get_camera()
-    {
-        return engine_camera;
-    }
+    //Camera& get_camera()
+    //{
+    //    return engine_camera;
+    //}
 
     std::map<std::string, Mesh*>* get_meshes()
     {
@@ -47,7 +47,7 @@ class Engine
     static Engine* engine_instance;
 
     // TODO This is temporal. Camera should be in the scene as an entity.
-    Camera                       engine_camera;
+    //Camera                       engine_camera;
     modules::ModuleManager       module_manager;
     std::map<std::string, Mesh*> meshes;
     

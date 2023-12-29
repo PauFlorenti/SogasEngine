@@ -21,6 +21,11 @@ class RendererModule : public IModule
         return renderer;
     }
 
+    // clang-format off
+    Handle get_active_camera() const { return active_camera; }
+    void set_active_camera(Handle new_camera) { active_camera = new_camera; }
+    // clang-format on
+
   protected:
     bool start() override;
     void stop() override;
@@ -33,9 +38,9 @@ class RendererModule : public IModule
   private:
     //! Not a shared_ptr<pinut::GPUDevice> due to C26495.
     //! Variable not initialized and cannot initialize an abstract class.
-    pinut::GPUDevice* renderer = nullptr;
-
-    void* window_handle = nullptr;
+    pinut::GPUDevice* renderer      = nullptr;
+    void*             window_handle = nullptr;
+    Handle            active_camera;
 };
 } // namespace modules
 } // namespace sogas

@@ -1,5 +1,6 @@
 #include "pch.hpp"
 
+#include <components/basic/camera_component.h>
 #include <modules/module_renderer.h>
 #include <modules/render_manager.h>
 #include <resources/pipeline.h>
@@ -18,10 +19,6 @@
 #else
 #error "Only win64 platform implemented at the moment."
 #endif
-
-// TODO engine and camera are temporal
-#include <engine/camera.h>
-#include <engine/engine.h>
 
 #include <resources/mesh.h>
 
@@ -266,13 +263,20 @@ void RendererModule::render()
 
     UniformBuffer ubo{};
 
-    auto camera = sogas::Engine::Get().get_camera();
-    ubo.view    = camera.get_view();
-    ubo.proj    = camera.get_projection();
-    ubo.proj[1][1] *= -1;
+    Entity* camera_entity = active_camera;
 
-    auto model = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, 0.0f, 0.0f)) *
-                 glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    if (!camera_entity)
+    {
+        camera_entity = get_entity_by_name("camera");
+    }
+
+    ASSERT(camera_entity);
+    CameraComponent* camera = camera_entity->get<CameraComponent>();
+    ASSERT(camera);
+
+    ubo.view = camera->get_view();
+    ubo.proj = camera->get_projection();
+    ubo.proj[1][1] *= -1;
 
     auto data = renderer->map_buffer(global_ubo, sizeof(ubo));
     memcpy(data, &ubo, sizeof(ubo));
@@ -285,8 +289,6 @@ void RendererModule::render()
     cmd->bind_pipeline("triangle_pipeline");
     cmd->set_scissors(nullptr);
     cmd->set_viewport(nullptr);
-
-    cmd->set_push_constant(ShaderStageType::VERTEX, sizeof(glm::mat4), 0, &model);
 
     cmd->bind_descriptor_set(descriptor_set_handle);
 

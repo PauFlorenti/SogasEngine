@@ -37,7 +37,7 @@ class Camera
                                      f32  new_near,
                                      f32  new_far);
 
-  private:
+  protected:
     void update_view_projection();
 
     glm::mat4 view            = glm::mat4(1.0f);

@@ -36,9 +36,11 @@ class Entity : public BaseComponent
     void on_entity_created();
 
   private:
-      Handle components[Handle::max_types];
+    Handle components[Handle::max_types];
 };
 
-template<>
+template <>
 ObjectManager<Entity>* get_object_manager<Entity>();
+
+extern Handle get_entity_by_name(const std::string& name);
 } // namespace sogas
