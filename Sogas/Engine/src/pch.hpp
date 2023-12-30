@@ -28,9 +28,11 @@
 #define NOSERVICE
 #define NOHELP
 #include <Windows.h>
+#include <windowsx.h>
 #endif
 
 // Third party includes
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #pragma warning(disable : 4201)
 #include <glm/ext/quaternion_float.hpp>

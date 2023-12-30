@@ -50,7 +50,7 @@ class Camera
     glm::vec3 up      = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 left    = glm::vec3(-1.0f, 0.0f, 0.0f);
 
-    f32 fov          = glm::radians(60.0f);
+    f32 fov          = 60.0f;
     f32 aspect_ratio = 1.0f;
     f32 z_min        = 0.01f;
     f32 z_max        = 1000.0f;

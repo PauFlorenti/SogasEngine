@@ -28,10 +28,13 @@ void FlyoverCameraController::update(f32 delta_time)
     const auto right       = transform->get_right();
     const auto up          = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    // TODO rotation.
+    f32 yaw, pitch;
+    vector_to_yaw_pitch(forward, &yaw, &pitch);
 
     if (auto input = Engine::Get().get_input())
     {
+        glm::vec3 speed = glm::vec3(0.0f);
+
         if (input->get_key(0x57).is_pressed())
         {
             speed.z = 1.0f;
@@ -58,11 +61,28 @@ void FlyoverCameraController::update(f32 delta_time)
         }
         else if (input->get_key(0x51).is_pressed())
         {
-            // const auto view     = engine_camera.get_view();
-            // glm::quat  rotation = glm::quat(view);
+            yaw -= sensibility * delta_time;
         }
-        else if (input->get_key(0x52).is_pressed())
+        else if (input->get_key(0x45).is_pressed())
         {
+            yaw += sensibility * delta_time;
+        }
+
+        if (input->get_mouse_button(input::MouseButton::RIGHT).is_pressed())
+        {
+            const auto& offset = -input->get_mouse_offset();
+
+            yaw += offset.x * sensibility * delta_time;
+            pitch -= offset.y * sensibility * delta_time;
+        }
+
+        if (pitch > 89.9f)
+        {
+            pitch = 89.9f;
+        }
+        if (pitch < -89.9f)
+        {
+            pitch = -89.9f;
         }
 
         glm::vec3 offset = glm::vec3(0.0f);
@@ -70,20 +90,17 @@ void FlyoverCameraController::update(f32 delta_time)
         offset += right * speed.x * delta_speed;
         offset += up * speed.y * delta_speed;
 
-        auto new_position = position + offset;
-        transform->lookAt(new_position, new_position + forward, up);
+        const auto new_forward  = glm::normalize(yaw_pitch_to_vector(yaw, pitch));
+        const auto new_position = position + offset;
 
-        speed = glm::vec3(0.0f);
+        transform->lookAt(new_position, new_position + new_forward, up);
     }
 }
 
 void FlyoverCameraController::load(const json& j, EntityParser& /*context*/)
 {
-    if (j.count("speed") && j["speed"].is_number())
-    {
-        speed_factor = j.value("speed", speed_factor);
-    }
-
-    enabled = j.value("enabled", enabled);
+    speed_factor = j.value("speed", speed_factor);
+    sensibility  = j.value("sensibility", sensibility);
+    enabled      = j.value("enabled", enabled);
 }
 } // namespace sogas

@@ -1,4 +1,4 @@
-#include <input/windows_keyboard_interface.h>
+#include <input/devices/windows_keyboard_interface.h>
 
 namespace sogas
 {

@@ -9,7 +9,7 @@ class PauComponent : public BaseComponent
 {
     DECLARE_SIBILING_ACCESS()
 
-    f32 speed = 1.0f;
+    f32 speed = 10.0f;
 
   public:
     void update(f32 delta_time);

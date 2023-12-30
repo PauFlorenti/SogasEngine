@@ -255,6 +255,8 @@ void RendererModule::stop()
     renderer->shutdown();
 }
 
+u32 x = 1.0f;
+
 void RendererModule::render()
 {
     renderer->begin_frame();

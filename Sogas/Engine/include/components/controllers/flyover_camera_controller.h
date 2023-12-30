@@ -15,8 +15,8 @@ class FlyoverCameraController : public BaseComponent
     void load(const json& j, EntityParser& context);
 
   private:
-    f32       speed_factor = 1.0f;
-    glm::vec3 speed        = glm::vec3(0.0f);
+    f32       speed_factor = 10.0f;
+    f32       sensibility  = 10.0f;
     bool      enabled      = true;
 };
 } // namespace sogas

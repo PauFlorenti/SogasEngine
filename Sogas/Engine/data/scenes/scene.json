@@ -3,9 +3,8 @@
 		"entity": {
 			"name": "camera",
 			"transform": {
-				"pos": "-15 25 -15",
-				"lookat": "0 0 0",
-				"scale": 1
+				"pos": "0 0 0",
+				"euler": "0 180 0"
 			},
 			"camera": {
 				"fov": 60,
@@ -13,16 +12,18 @@
 				"zmax": 10000
 			},
 			"flyover_camera": {
-				"speed": 10.0
-			}
+				"speed": 100,
+				"sensibility": 100
+			},
+			"xpau": {}
 		}
 	},
 	{
 		"entity": {
 			"name": "viking-room",
 			"transform": {
-				"pos": "0 0 0",
-				"euler": "0 180 0",
+				"pos": "0 0 -30",
+				"euler": "0 0 0",
 				"scale": 1
 			},
 			"render": [
@@ -30,7 +31,7 @@
 					"mesh": "D:/Meshes/viking-room/source/viking-room.obj"
 				}
 			],
-			"pau": {}
+			"xpau": {}
 		}
 	}
 ]

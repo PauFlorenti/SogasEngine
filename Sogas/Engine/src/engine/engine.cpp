@@ -75,6 +75,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_RBUTTONDOWN:
         case WM_RBUTTONUP:
         case WM_MOUSEMOVE:
+        {
+            auto mouse_device = sogas::Engine::Get().get_input()->get_mouse_device();
+            mouse_device->processMsg(hWnd, message, wParam, lParam);
+        }
         case WM_MOUSEWHEEL:
         case WM_INPUT:
             break;
@@ -147,7 +151,7 @@ void Engine::run()
 
         update_clock(clock);
         f64 current_time = clock->elapsed_time;
-        delta_time = (current_time - last_time) / 10000;
+        delta_time       = (current_time - last_time) / 10000;
 
         do_frame();
     }

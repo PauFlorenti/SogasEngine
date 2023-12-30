@@ -12,7 +12,7 @@ void CameraComponent::update(f32 /*delta_time*/)
     TransformComponent* transform = get<TransformComponent>();
     ASSERT(transform);
 
-    look_at(transform->get_position(), transform->get_forward(), transform->get_up());
+    look_at(transform->get_position(), transform->get_position() + transform->get_forward(), transform->get_up());
 }
 
 void CameraComponent::load(const json& j, EntityParser& /*context*/)
