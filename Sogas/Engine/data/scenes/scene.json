@@ -3,8 +3,8 @@
 		"entity": {
 			"name": "camera",
 			"transform": {
-				"pos": "0 0 0",
-				"euler": "0 180 0"
+				"pos": "25 15 25",
+				"lookat": "0 0 0"
 			},
 			"camera": {
 				"fov": 60,
@@ -22,7 +22,7 @@
 		"entity": {
 			"name": "viking-room",
 			"transform": {
-				"pos": "0 0 -30",
+				"pos": "0 0 0",
 				"euler": "0 0 0",
 				"scale": 1
 			},

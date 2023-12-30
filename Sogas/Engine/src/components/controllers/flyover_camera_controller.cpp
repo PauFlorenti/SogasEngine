@@ -39,36 +39,36 @@ void FlyoverCameraController::update(f32 delta_time)
         {
             speed.z = 1.0f;
         }
-        else if (input->get_key(0x53).is_pressed())
+        if (input->get_key(0x53).is_pressed())
         {
             speed.z = -1.0f;
         }
-        else if (input->get_key(0x41).is_pressed())
-        {
-            speed.x = -1.0f;
-        }
-        else if (input->get_key(0x44).is_pressed())
+        if (input->get_key(0x41).is_pressed())
         {
             speed.x = 1.0f;
         }
-        else if (input->get_key(0x5A).is_pressed())
+        if (input->get_key(0x44).is_pressed())
+        {
+            speed.x = -1.0f;
+        }
+        if (input->get_key(0x5A).is_pressed())
         {
             speed.y = 1.0f;
         }
-        else if (input->get_key(0x58).is_pressed())
+        if (input->get_key(0x58).is_pressed())
         {
             speed.y = -1.0f;
         }
-        else if (input->get_key(0x51).is_pressed())
+        if (input->get_key(0x51).is_pressed())
         {
             yaw -= sensibility * delta_time;
         }
-        else if (input->get_key(0x45).is_pressed())
+        if (input->get_key(0x45).is_pressed())
         {
             yaw += sensibility * delta_time;
         }
 
-        if (input->get_mouse_button(input::MouseButton::RIGHT).is_pressed())
+        if (input->get_mouse_button(input::MouseButton::MIDDLE).is_pressed())
         {
             const auto& offset = -input->get_mouse_offset();
 
