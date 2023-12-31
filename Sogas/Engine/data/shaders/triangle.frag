@@ -7,11 +7,17 @@ layout (location = 3) in vec2 inUv;
 
 layout (location = 0) out vec4 outFragmentColor;
 
-layout (binding = 1, set = 0) uniform light {
-    vec3 position;
+const int LIGHT_COUNT = 3;
+struct Light
+{
+    vec3  position;
     float intensity;
-    vec3 color;
+    vec3  color;
     float max_distance;
+};
+
+layout (binding = 1, set = 0) uniform light {
+    Light l[LIGHT_COUNT];
 } u_light;
 
 layout (binding = 0, set = 1) uniform material_instance {
@@ -22,22 +28,31 @@ layout (binding = 2, set = 1) uniform sampler2D normal_texture;
 
 void main()
 {
-    vec3 L = u_light.position - inPosition;
-    float distance_to_light = length(L);
-    L = normalize(L);
-    vec3 N = normalize(inNormal);
-    float dotNL = normalize(dot(N, L));
-
-    float attenuation = 0.0f;
-    attenuation += u_light.max_distance / distance_to_light;
-
-    vec4 color = vec4(0.1f);
-    vec4 albedo = vec4(u_material_instance.color * inColor, 1.0f) * texture(albedo_texture, inUv);
+    vec3 N      = normalize(inNormal);
+    vec4 color  = vec4(0.f);
+    vec4 albedo = vec4(inColor, 1.0f) * texture(albedo_texture, inUv);
     vec3 normal = texture(normal_texture, inUv).xyz;
 
-    if (dotNL > 0.0f) { // Pixel visible by light.
-        color += attenuation * u_light.intensity * dotNL;
+    vec4 material_color = albedo * vec4(u_material_instance.color, 1.0);
+
+    for (int light_index = 0; light_index < LIGHT_COUNT; light_index++)
+    {
+        Light light = u_light.l[light_index];
+
+        vec3 L = light.position - inPosition;
+        float distance_to_light = length(L);
+        L = normalize(L);
+        float dotNL = normalize(dot(N, L));
+
+        float attenuation = 0.0f;
+        attenuation += light.max_distance / distance_to_light;
+
+        if (dotNL > 0.0f) { // Pixel visible by light.
+            color += attenuation * vec4(light.color, 1) * light.intensity * dotNL;
+        }
     }
 
-    outFragmentColor = color * albedo;
+
+    //outFragmentColor = color * albedo;
+    outFragmentColor = color * material_color;
 }

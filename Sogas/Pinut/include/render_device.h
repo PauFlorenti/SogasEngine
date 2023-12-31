@@ -50,8 +50,10 @@ class GPUDevice
 
     virtual resources::CommandBuffer* get_command_buffer(bool begin) = 0;
 
-    virtual void* map_buffer(const resources::BufferHandle buffer_index, const u32 size) = 0;
-    virtual void  unmap_buffer(const resources::BufferHandle buffer_index)               = 0;
+    virtual void* map_buffer(const resources::BufferHandle buffer_index,
+                             const u32                     size,
+                             const u32                     offset = 0)                         = 0;
+    virtual void  unmap_buffer(const resources::BufferHandle buffer_index) = 0;
 
     virtual void copy_buffer(const resources::BufferHandle src_buffer_id,
                              const resources::BufferHandle dst_buffer_id,

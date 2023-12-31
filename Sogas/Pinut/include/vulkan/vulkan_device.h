@@ -83,7 +83,7 @@ class VulkanDevice : public GPUDevice
 
     resources::CommandBuffer* get_command_buffer(bool begin) override;
 
-    void* map_buffer(const resources::BufferHandle buffer_id, const u32 size) override;
+    void* map_buffer(const resources::BufferHandle buffer_id, const u32 size, const u32 offset = 0) override;
     void  unmap_buffer(const resources::BufferHandle buffer_id) override;
 
     void copy_buffer(const resources::BufferHandle src_buffer_id,

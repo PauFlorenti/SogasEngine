@@ -25,10 +25,10 @@ this main one.
 ## ENGINE
 - [x] Load .obj files.
 - [ ] Load .gltf files.
-- [ ] Create transform component.
-- [ ] Create camera component.
+- [x] Create transform component.
+- [x] Create camera component.
 - [ ] Create render component.
-    - [ ] Create mesh data.
+    - [x] Create mesh data.
     - [ ] Create material data.
 - [ ] Create light component.
 - [ ] Parse json scene file.

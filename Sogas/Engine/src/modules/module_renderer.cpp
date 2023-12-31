@@ -1,6 +1,8 @@
 #include "pch.hpp"
 
 #include <components/basic/camera_component.h>
+#include <components/basic/point_light_component.h>
+#include <components/basic/transform_component.h>
 #include <modules/module_renderer.h>
 #include <modules/render_manager.h>
 #include <resources/pipeline.h>
@@ -49,6 +51,17 @@ static bool read_shader_binary(const std::string& filepath, std::vector<u32>& ou
     return true;
 }
 
+static void upload_data_to_buffer(pinut::GPUDevice*              renderer,
+                                  pinut::resources::BufferHandle buffer,
+                                  void*                          data,
+                                  u64                            size,
+                                  u64                            offset = 0)
+{
+    auto buffer_data = renderer->map_buffer(buffer, size, offset);
+    memcpy(buffer_data, data, size);
+    renderer->unmap_buffer(buffer);
+}
+
 struct UniformBuffer
 {
     glm::mat4 view;
@@ -84,6 +97,8 @@ DescriptorSetLayoutHandle descriptor_set_layout_handle;
 DescriptorSetLayoutHandle instance_descriptor_set_layout_handle;
 
 Material material;
+
+static const u32 LIGHT_COUNT = 3;
 
 bool RendererModule::start()
 {
@@ -163,9 +178,8 @@ bool RendererModule::start()
     normal_texture_descriptor.data = &normal_texture_data;
     material.normal_texture        = renderer->create_texture(normal_texture_descriptor);
 
-    LightData light{};
-    light.max_distance = 10.0f;
-    light_ubo          = renderer->create_buffer({sizeof(LightData), BufferType::UNIFORM, &light});
+    light_ubo =
+      renderer->create_buffer({sizeof(LightData) * LIGHT_COUNT, BufferType::UNIFORM, nullptr});
 
     glm::vec3 color = glm::vec3(1.0f);
     material_buffer = renderer->create_buffer({sizeof(glm::vec3), BufferType::UNIFORM, &color});
@@ -255,8 +269,6 @@ void RendererModule::stop()
     renderer->shutdown();
 }
 
-u32 x = 1.0f;
-
 void RendererModule::render()
 {
     renderer->begin_frame();
@@ -280,9 +292,47 @@ void RendererModule::render()
     ubo.proj = camera->get_projection();
     ubo.proj[1][1] *= -1;
 
-    auto data = renderer->map_buffer(global_ubo, sizeof(ubo));
-    memcpy(data, &ubo, sizeof(ubo));
-    renderer->unmap_buffer(global_ubo);
+    upload_data_to_buffer(renderer, global_ubo, &ubo, sizeof(ubo));
+
+    Entity* light_entity = get_entity_by_name("light");
+    ASSERT(light_entity);
+
+    PointLightComponent* point_light     = light_entity->get<PointLightComponent>();
+    TransformComponent*  point_transform = light_entity->get<TransformComponent>();
+
+    LightData light_data[3];
+    light_data[0].color        = point_light->color;
+    light_data[0].intensity    = point_light->intensity;
+    light_data[0].max_distance = point_light->radius;
+    light_data[0].position     = point_transform->get_position();
+
+    Entity* light_entity1 = get_entity_by_name("light1");
+    ASSERT(light_entity1);
+
+    PointLightComponent* point_light1     = light_entity1->get<PointLightComponent>();
+    TransformComponent*  point_transform1 = light_entity1->get<TransformComponent>();
+
+    light_data[1].color        = point_light1->color;
+    light_data[1].intensity    = point_light1->intensity;
+    light_data[1].max_distance = point_light1->radius;
+    light_data[1].position     = point_transform1->get_position();
+
+    Entity* light_entity2 = get_entity_by_name("light2");
+    ASSERT(light_entity2);
+
+    PointLightComponent* point_light2     = light_entity2->get<PointLightComponent>();
+    TransformComponent*  point_transform2 = light_entity2->get<TransformComponent>();
+
+    light_data[2].color        = point_light2->color;
+    light_data[2].intensity    = point_light2->intensity;
+    light_data[2].max_distance = point_light2->radius;
+    light_data[2].position     = point_transform2->get_position();
+
+    upload_data_to_buffer(renderer,
+                          light_ubo,
+                          &light_data,
+                          sizeof(LightData) * LIGHT_COUNT,
+                          0);
 
     auto cmd = renderer->get_command_buffer(true);
 

@@ -14,8 +14,7 @@
 			"flyover_camera": {
 				"speed": 100,
 				"sensibility": 100
-			},
-			"xpau": {}
+			}
 		}
 	},
 	{
@@ -30,8 +29,43 @@
 				{
 					"mesh": "D:/Meshes/viking-room/source/viking-room.obj"
 				}
-			],
-			"xpau": {}
+			]
+		}
+	},
+	{
+		"entity": {
+			"name": "light",
+			"transform": {
+				"pos": "0 10 0"
+			},
+			"point_light":
+			{
+				"color": "1 0 0 0"
+			}
+		}
+	},
+	{
+		"entity": {
+			"name": "light1",
+			"transform": {
+				"pos": "10 10 0"
+			},
+			"point_light":
+			{
+				"color": "0 0 1 0"
+			}
+		}
+	},
+	{
+		"entity": {
+			"name": "light2",
+			"transform": {
+				"pos": "0 10 10"
+			},
+			"point_light":
+			{
+				"color": "0 1 0 0"
+			}
 		}
 	}
 ]

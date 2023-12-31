@@ -1072,7 +1072,7 @@ resources::CommandBuffer* VulkanDevice::get_command_buffer(bool begin)
     return &command_buffers[current_frame];
 }
 
-void* VulkanDevice::map_buffer(const resources::BufferHandle handle, u32 size)
+void* VulkanDevice::map_buffer(const resources::BufferHandle handle, const u32 size, const u32 offset)
 {
     ASSERT(handle.id != INVALID_ID);
     ASSERT(size > 0);
@@ -1082,7 +1082,7 @@ void* VulkanDevice::map_buffer(const resources::BufferHandle handle, u32 size)
     ASSERT(buffer != nullptr);
 
     void* data;
-    vkMapMemory(device, buffer->memory, 0, size, 0, &data);
+    vkMapMemory(device, buffer->memory, offset, size, 0, &data);
 
     return data;
 }
