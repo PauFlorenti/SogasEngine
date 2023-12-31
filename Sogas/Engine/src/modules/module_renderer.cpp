@@ -91,6 +91,8 @@ struct Material
 BufferHandle              global_ubo;
 BufferHandle              light_ubo;
 BufferHandle              material_buffer;
+DescriptorSetHandle       wireframe_descriptor_set_handle;
+DescriptorSetLayoutHandle wireframe_descriptor_set_layout_handle;
 DescriptorSetHandle       descriptor_set_handle;
 DescriptorSetHandle       instance_descriptor_set_handle;
 DescriptorSetLayoutHandle descriptor_set_layout_handle;
@@ -114,12 +116,12 @@ bool RendererModule::start()
 
     std::vector<u32> vs_buffer, fs_buffer;
 
-    if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/triangle.vert.spv", vs_buffer))
+    if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/forward.vert.spv", vs_buffer))
     {
         throw std::runtime_error("Failed to load vertex shader data.");
     }
 
-    if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/triangle.frag.spv", fs_buffer))
+    if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/forward.frag.spv", fs_buffer))
     {
         throw std::runtime_error("Failed to load fragment shader data.");
     }
@@ -249,6 +251,62 @@ bool RendererModule::start()
 
     renderer->create_pipeline(pipeline_descriptor);
 
+    // Create wireframe pipeline
+
+    std::vector<u32> vs_wireframe_buffer, fs_wireframe_buffer;
+
+    if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/wireframe.vert.spv",
+                            vs_wireframe_buffer))
+    {
+        throw std::runtime_error("Failed to load vertex shader data.");
+    }
+
+    if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/wireframe.frag.spv",
+                            fs_wireframe_buffer))
+    {
+        throw std::runtime_error("Failed to load fragment shader data.");
+    }
+
+    ShaderStateDescriptor wireframe_shader_state = {};
+    wireframe_shader_state.add_name("wireframe_shader")
+      .add_shader_stage({vs_wireframe_buffer, ShaderStageType::VERTEX})
+      .add_shader_stage({fs_wireframe_buffer, ShaderStageType::FRAGMENT});
+
+    PipelineDescriptor wireframe_pipeline_descriptor = {};
+    wireframe_pipeline_descriptor.add_name("wireframe_pipeline")
+      .set_topology(TopologyType::LINE_STRIP)
+      .add_shader_state(wireframe_shader_state)
+      .add_viewport(viewport_state)
+      .add_rasterization(raster);
+
+    wireframe_pipeline_descriptor.vertex_input.add_vertex_stream({0, sizeof(Vertex)});
+    wireframe_pipeline_descriptor.vertex_input.add_vertex_attribute(
+      {0, 0, offsetof(sogas::Vertex, position), VertexInputFormatType::VEC3});
+
+    DescriptorSetBindingDescriptor wireframe_global_binding = {0,
+                                                               1,
+                                                               ShaderStageType::VERTEX,
+                                                               DescriptorType::UNIFORM};
+
+    DescriptorSetLayoutDescriptor wireframe_descriptor_set_layout_descriptor = {};
+    wireframe_descriptor_set_layout_descriptor.add_binding(wireframe_global_binding)
+      .add_name("GLOBAL");
+
+    wireframe_descriptor_set_layout_handle =
+      renderer->create_descriptor_set_layout(wireframe_descriptor_set_layout_descriptor);
+
+    wireframe_pipeline_descriptor.add_descriptor_set_layout(wireframe_descriptor_set_layout_handle);
+
+    DescriptorSetDescriptor wireframe_descriptor_set_descriptor = {};
+    wireframe_descriptor_set_descriptor.set_layout(wireframe_descriptor_set_layout_handle)
+      .add_buffer(global_ubo, 0);
+    wireframe_descriptor_set_handle =
+      renderer->create_descriptor_set(wireframe_descriptor_set_descriptor);
+
+    wireframe_pipeline_descriptor.add_push_constant({ShaderStageType::VERTEX, sizeof(glm::mat4)});
+
+    renderer->create_pipeline(wireframe_pipeline_descriptor);
+
     return true;
 }
 
@@ -256,9 +314,11 @@ void RendererModule::stop()
 {
     PINFO("Shutting down renderer.");
 
+    renderer->destroy_descriptor_set_layout(wireframe_descriptor_set_layout_handle);
     renderer->destroy_descriptor_set_layout(descriptor_set_layout_handle);
     renderer->destroy_descriptor_set_layout(instance_descriptor_set_layout_handle);
     renderer->destroy_descriptor_set(descriptor_set_handle);
+    renderer->destroy_descriptor_set(wireframe_descriptor_set_handle);
     renderer->destroy_descriptor_set(instance_descriptor_set_handle);
     renderer->destroy_texture(material.albedo_texture);
     renderer->destroy_texture(material.normal_texture);
@@ -328,23 +388,27 @@ void RendererModule::render()
     light_data[2].max_distance = point_light2->radius;
     light_data[2].position     = point_transform2->get_position();
 
-    upload_data_to_buffer(renderer,
-                          light_ubo,
-                          &light_data,
-                          sizeof(LightData) * LIGHT_COUNT,
-                          0);
+    upload_data_to_buffer(renderer, light_ubo, &light_data, sizeof(LightData) * LIGHT_COUNT, 0);
 
     auto cmd = renderer->get_command_buffer(true);
 
     cmd->clear(0.3f, 0.5f, 0.3f, 1.0f);
     cmd->bind_pass("Swapchain_renderpass");
-    cmd->bind_pipeline("triangle_pipeline");
+    is_wireframe ? cmd->bind_pipeline("wireframe_pipeline") :
+                   cmd->bind_pipeline("triangle_pipeline");
     cmd->set_scissors(nullptr);
     cmd->set_viewport(nullptr);
 
-    cmd->bind_descriptor_set(descriptor_set_handle);
+    if (is_wireframe)
+    {
+        cmd->bind_descriptor_set(wireframe_descriptor_set_handle);
+    }
+    else
+    {
+        cmd->bind_descriptor_set(descriptor_set_handle);
+        cmd->bind_descriptor_set(instance_descriptor_set_handle, 1);
+    }
 
-    cmd->bind_descriptor_set(instance_descriptor_set_handle, 1);
     render_manager.render_all(cmd, Handle());
 
     renderer->end_frame();

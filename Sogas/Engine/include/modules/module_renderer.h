@@ -24,6 +24,8 @@ class RendererModule : public IModule
     // clang-format off
     Handle get_active_camera() const { return active_camera; }
     void set_active_camera(Handle new_camera) { active_camera = new_camera; }
+    bool get_wireframe_enabled() const { return is_wireframe; }
+    void set_wireframe(bool enable) { is_wireframe = enable; }
     // clang-format on
 
   protected:
@@ -41,6 +43,7 @@ class RendererModule : public IModule
     pinut::GPUDevice* renderer      = nullptr;
     void*             window_handle = nullptr;
     Handle            active_camera;
+    bool              is_wireframe = false;
 };
 } // namespace modules
 } // namespace sogas

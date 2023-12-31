@@ -21,7 +21,7 @@ void CameraComponent::load(const json& j, EntityParser& /*context*/)
     z_min = j.value("zmin", z_min);
     z_max = j.value("zmax", z_max);
 
-    // TODO calculate aspect ratio.
+    //! TODO calculate aspect ratio.
     set_projection_parameters(fov, 1280.0f / 720.0f, z_min, z_max);
 }
 } // namespace sogas

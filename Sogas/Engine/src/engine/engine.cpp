@@ -153,6 +153,16 @@ void Engine::run()
         f64 current_time = clock->elapsed_time;
         delta_time       = (current_time - last_time) / 10000;
 
+        if (auto input = get_input())
+        {
+            if (input->get_key(VK_F1).gets_released())
+            {
+                auto renderer         = get_renderer();
+                bool enable_wireframe = renderer->get_wireframe_enabled();
+                renderer->set_wireframe(!enable_wireframe);
+            }
+        }
+
         do_frame();
     }
 }

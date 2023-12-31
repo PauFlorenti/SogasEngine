@@ -18,12 +18,4 @@ void PointLightComponent::load(const json& j, EntityParser& /*context*/)
     enabled   = j.value("enabled", enabled);
     intensity = j.value("intensity", intensity);
 }
-
-static f32 aux = 0.0f;
-
-void PointLightComponent::update(f32 /*delta_time*/)
-{
-    //aux += delta_time * 10.0f;
-    //color.x = sinf(aux);
-}
 } // namespace sogas
