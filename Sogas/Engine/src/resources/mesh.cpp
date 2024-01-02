@@ -6,6 +6,23 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobj/tiny_obj_loader.h"
 
+static void calculate_bounding_sphere(sogas::BoundingSphere&            sphere,
+                                      const std::vector<sogas::Vertex>& vertices)
+{
+    sphere.center = glm::vec3(0.0f);
+    sphere.radius = 0.0f;
+
+    glm::vec3 point = glm::vec3(0.0f);
+    for (const auto& vertex : vertices)
+    {
+        const auto distance = glm::length(sphere.center - vertex.position);
+        if (distance > sphere.radius)
+        {
+            sphere.radius = distance;
+        }
+    }
+}
+
 namespace sogas
 {
 // clang-format off
@@ -223,6 +240,8 @@ void load_mesh(const std::string& name, const std::string& filename)
     device->copy_buffer(index_staging_buffer, mesh->index_buffer, index_buffer_size);
     device->destroy_buffer({index_staging_buffer});
 
+    calculate_bounding_sphere(mesh->bounding_sphere, mesh->vertices);
+
     meshes->insert({name, mesh});
 }
 
@@ -238,13 +257,50 @@ void Mesh::draw_indexed(pinut::resources::CommandBuffer* cmd) const
     cmd->bind_index_buffer(index_buffer, pinut::resources::BufferIndexType::UINT16);
     cmd->draw_indexed(0, static_cast<u32>(indices.size()), 0, 1, 0);
 }
+
 void Mesh::destroy()
 {
     auto device = sogas::Engine::Get().get_renderer()->get_device();
-    vertices.clear();
-    indices.clear();
 
+    vertices.clear();
     device->destroy_buffer(vertex_buffer);
-    device->destroy_buffer(index_buffer);
+
+    if (!indices.empty())
+    {
+        device->destroy_buffer(index_buffer);
+        indices.clear();
+    }
+}
+
+void Mesh::upload()
+{
+    ASSERT(vertices.empty() == false);
+    ASSERT(name.empty() == false);
+
+    auto device = Engine::Get().get_renderer()->get_device();
+
+    const u32 vertex_buffer_size = static_cast<u32>(vertices.size() * sizeof(Vertex));
+    const u32 index_buffer_size  = static_cast<u32>(indices.size() * sizeof(u16));
+
+    const auto vertex_staging_buffer = device->create_buffer(
+      {vertex_buffer_size, pinut::resources::BufferType::STAGING, vertices.data()});
+    vertex_buffer = device->create_buffer({vertex_buffer_size});
+
+    device->copy_buffer(vertex_staging_buffer, vertex_buffer, vertex_buffer_size);
+    device->destroy_buffer({vertex_staging_buffer});
+
+    if (!indices.empty())
+    {
+        const auto index_staging_buffer = device->create_buffer(
+          {index_buffer_size, pinut::resources::BufferType::STAGING, indices.data()});
+        index_buffer =
+          device->create_buffer({index_buffer_size, pinut::resources::BufferType::INDEX});
+
+        device->copy_buffer(index_staging_buffer, index_buffer, index_buffer_size);
+        device->destroy_buffer({index_staging_buffer});
+    }
+
+    auto meshes = Engine::Get().get_meshes();
+    meshes->insert({name, this});
 }
 } // namespace sogas

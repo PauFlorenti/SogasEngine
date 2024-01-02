@@ -34,6 +34,7 @@
 // Third party includes
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 #pragma warning(disable : 4201)
 #include <glm/ext/quaternion_float.hpp>
 #pragma warning(default : 4201)

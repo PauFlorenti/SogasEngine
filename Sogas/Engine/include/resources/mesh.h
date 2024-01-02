@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/geometry.h>
 #include <resources/resources.h>
 
 #pragma warning(disable : 4201)
@@ -16,6 +17,7 @@ class CommandBuffer;
 } // namespace pinut
 namespace sogas
 {
+class BoundingSphere;
 struct Vertex
 {
     glm::vec3 position = glm::vec3(0.0f);
@@ -40,11 +42,14 @@ class Mesh
     void draw(pinut::resources::CommandBuffer* cmd) const;
     void draw_indexed(pinut::resources::CommandBuffer* cmd) const;
     void destroy();
+    void upload();
 
+    std::string                    name;
     std::vector<Vertex>            vertices;
     std::vector<u16>               indices;
     pinut::resources::BufferHandle vertex_buffer{pinut::resources::invalid_buffer};
     pinut::resources::BufferHandle index_buffer{pinut::resources::invalid_buffer};
+    BoundingSphere                 bounding_sphere;
 };
 
 void init_default_meshes();

@@ -3,6 +3,8 @@
 #include <components/basic/camera_component.h>
 #include <components/basic/point_light_component.h>
 #include <components/basic/transform_component.h>
+#include <engine/engine.h>
+#include <engine/primitives.h>
 #include <modules/module_renderer.h>
 #include <modules/render_manager.h>
 #include <resources/pipeline.h>
@@ -114,6 +116,8 @@ bool RendererModule::start()
 
     init_default_meshes();
 
+    create_primitives();
+
     std::vector<u32> vs_buffer, fs_buffer;
 
     if (!read_shader_binary("../../Sogas/Engine/data/shaders/bin/forward.vert.spv", vs_buffer))
@@ -127,7 +131,7 @@ bool RendererModule::start()
     }
 
     ShaderStateDescriptor shader_state = {};
-    shader_state.add_name("triangle_shader")
+    shader_state.add_name("forward_shader")
       .add_shader_stage({vs_buffer, ShaderStageType::VERTEX})
       .add_shader_stage({fs_buffer, ShaderStageType::FRAGMENT});
 
@@ -139,7 +143,7 @@ bool RendererModule::start()
     raster.line_width              = 1.0f;
 
     PipelineDescriptor pipeline_descriptor = {};
-    pipeline_descriptor.add_name("triangle_pipeline")
+    pipeline_descriptor.add_name("forward_pipeline")
       .set_topology(TopologyType::TRIANGLE)
       .add_shader_state(shader_state)
       .add_viewport(viewport_state)
@@ -274,7 +278,7 @@ bool RendererModule::start()
 
     PipelineDescriptor wireframe_pipeline_descriptor = {};
     wireframe_pipeline_descriptor.add_name("wireframe_pipeline")
-      .set_topology(TopologyType::LINE_STRIP)
+      .set_topology(TopologyType::LINE)
       .add_shader_state(wireframe_shader_state)
       .add_viewport(viewport_state)
       .add_rasterization(raster);
@@ -395,7 +399,7 @@ void RendererModule::render()
     cmd->clear(0.3f, 0.5f, 0.3f, 1.0f);
     cmd->bind_pass("Swapchain_renderpass");
     is_wireframe ? cmd->bind_pipeline("wireframe_pipeline") :
-                   cmd->bind_pipeline("triangle_pipeline");
+                   cmd->bind_pipeline("forward_pipeline");
     cmd->set_scissors(nullptr);
     cmd->set_viewport(nullptr);
 
@@ -410,6 +414,9 @@ void RendererModule::render()
     }
 
     render_manager.render_all(cmd, Handle());
+
+    cmd->bind_pipeline("wireframe_pipeline");
+    cmd->bind_descriptor_set(wireframe_descriptor_set_handle);
 
     renderer->end_frame();
 

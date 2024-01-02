@@ -3,7 +3,7 @@
 		"entity": {
 			"name": "camera",
 			"transform": {
-				"pos": "25 15 25",
+				"pos": "5 5 5",
 				"lookat": "0 0 0"
 			},
 			"camera": {
