@@ -4,7 +4,6 @@
 #include <engine/primitives.h>
 #include <modules/module_renderer.h>
 #include <resources/commandbuffer.h>
-
 #include <resources/mesh.h>
 
 namespace sogas
@@ -113,7 +112,7 @@ void draw_line(pinut::resources::CommandBuffer* cmd,
                const glm::vec3                  dest,
                const glm::vec4 /*color*/)
 {
-    auto dst = dest;
+    auto            dst  = dest;
     const glm::vec3 dir  = dest - origin;
     f32             dist = glm::length(dir);
 

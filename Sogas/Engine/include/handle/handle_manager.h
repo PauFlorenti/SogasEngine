@@ -2,6 +2,10 @@
 
 #include <handle/handle.h>
 
+namespace pinut::resources
+{
+class CommandBuffer;
+}
 namespace sogas
 {
 using HandleManagerArray = std::array<HandleManager*, Handle::max_types>;
@@ -59,6 +63,7 @@ class HandleManager
 
     Handle create_handle();
     void   destroy_handle(Handle h);
+    void   render_debug(Handle h, pinut::resources::CommandBuffer* cmd);
     void   load(Handle h, const json& j, EntityParser& context);
     void   on_entity_created(Handle h);
 
@@ -70,7 +75,8 @@ class HandleManager
     static const u32      get_number_of_defined_types();
     static void           destroy_all_pending_objects();
 
-    virtual void update_all(f32 delta_time) = 0;
+    virtual void update_all(f32 delta_time)                             = 0;
+    virtual void render_debug_all(pinut::resources::CommandBuffer* cmd) = 0;
 
     static HandleManagerArray predefined_handle_managers;
     static u32                number_predefined_handle_managers;
@@ -96,6 +102,8 @@ class HandleManager
 
     virtual void create_object(Handle::handle_index index)                                    = 0;
     virtual void destroy_object(Handle::handle_index index)                                   = 0;
+    virtual void render_debug_object(Handle::handle_index             index,
+                                     pinut::resources::CommandBuffer* cmd)                    = 0;
     virtual void load_object(u32 source_internal_index, const json& j, EntityParser& context) = 0;
     virtual void on_entity_created_object(u32 internal_index)                                 = 0;
 

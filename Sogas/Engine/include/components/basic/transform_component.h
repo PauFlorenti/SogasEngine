@@ -6,7 +6,7 @@
 
 namespace sogas
 {
-class TransformComponent : public Transform, BaseComponent
+class TransformComponent : public Transform, public BaseComponent
 {
   public:
     void update(f32 /*delta_time*/){};

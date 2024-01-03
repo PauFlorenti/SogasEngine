@@ -418,7 +418,10 @@ void RendererModule::render()
     cmd->bind_pipeline("wireframe_pipeline");
     cmd->bind_descriptor_set(wireframe_descriptor_set_handle);
 
-    renderer->end_frame();
+    auto module_manager = Engine::Get().get_module_manager();
+    module_manager->render_debug(cmd);
+
+    renderer->end_frame(); 
 
     current_image++;
 }

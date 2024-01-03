@@ -34,7 +34,7 @@ class RendererModule : public IModule
     void update(f32 /*delta_time*/) override{};
     void render() override;
     void render_ui() override{};
-    void render_debug() override{};
+    void render_debug(pinut::resources::CommandBuffer*) override{};
     void resize_window(u32 width, u32 height) override;
 
   private:

@@ -7,6 +7,8 @@ class CommandBuffer;
 
 namespace sogas
 {
+class Mesh;
+
 bool create_primitives();
 
 void draw_line(pinut::resources::CommandBuffer* cmd,
@@ -24,8 +26,8 @@ void draw_wired_sphere(pinut::resources::CommandBuffer* cmd,
                        const glm::vec4                  color  = glm::vec4(1.0f));
 
 void draw_wired_box(pinut::resources::CommandBuffer* cmd,
-                     glm::mat4                        transform,
-                     const glm::vec4                  color = glm::vec4(1.0f));
+                    glm::mat4                        transform,
+                    const glm::vec4                  color = glm::vec4(1.0f));
 
 void draw_primitive(pinut::resources::CommandBuffer* cmd,
                     const Mesh*                      mesh,

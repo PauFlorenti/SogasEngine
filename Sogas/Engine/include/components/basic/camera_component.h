@@ -6,7 +6,7 @@
 
 namespace sogas
 {
-class CameraComponent : public Camera, BaseComponent
+class CameraComponent : public Camera, public BaseComponent
 {
     DECLARE_SIBILING_ACCESS()
 

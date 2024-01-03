@@ -39,6 +39,21 @@ class ObjectManager : public HandleManager
         }
     }
 
+    void render_debug_all(pinut::resources::CommandBuffer* cmd) override
+    {
+        ASSERT(objects);
+
+        if (number_objects_used <= 0)
+        {
+            return;
+        }
+
+        for (decltype(number_objects_used) i = 0; i < number_objects_used; ++i)
+        {
+            objects[i].render_debug(cmd);
+        }
+    }
+
     Handle get_handle_from_address(object_type* address)
     {
         auto internal_index = address - objects;
@@ -81,6 +96,13 @@ class ObjectManager : public HandleManager
     {
         object_type* address = objects + internal_index;
         address->~object_type();
+    }
+
+    void render_debug_object(Handle::handle_index             internal_index,
+                             pinut::resources::CommandBuffer* cmd) override
+    {
+        object_type* address = objects + internal_index;
+        address->render_debug(cmd);
     }
 
     void load_object(u32 internal_index, const json& j, EntityParser& context) override

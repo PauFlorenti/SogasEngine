@@ -108,6 +108,16 @@ void HandleManager::destroy_handle(Handle h)
     external_data.current_generation++;
 }
 
+void HandleManager::render_debug(Handle h, pinut::resources::CommandBuffer* cmd)
+{
+    if (!h.is_valid())
+    {
+        return;
+    }
+
+    render_debug_object(external_to_internal[h.get_external_index()].internal_index, cmd);
+}
+
 void HandleManager::load(Handle h, const json& j, EntityParser& context)
 {
     if (!h.is_valid())

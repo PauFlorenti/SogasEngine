@@ -85,5 +85,14 @@ void EntityModule::update(f32 delta_time)
 
     // TODO Destroy all pending objects.
 }
+
+void EntityModule::render_debug(pinut::resources::CommandBuffer* cmd)
+{
+    //TODO get render debug pipeline
+    for (auto object_manager : managers_to_render_debug)
+    {
+        object_manager->render_debug_all(cmd);
+    }
+}
 } // namespace modules
 } // namespace sogas

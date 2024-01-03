@@ -4,6 +4,7 @@
 #include <modules/module.h>
 #include <modules/module_manager.h>
 #include <platform/platform.h>
+#include <resources/commandbuffer.h>
 
 namespace sogas
 {
@@ -53,11 +54,11 @@ void ModuleManager::render_ui()
     }
 }
 
-void ModuleManager::render_debug()
+void ModuleManager::render_debug(pinut::resources::CommandBuffer* cmd)
 {
-    for (const auto& module : render_modules)
+    for (const auto& module : registered_modules)
     {
-        module->render_debug();
+        module.second->render_debug(cmd);
     }
 }
 

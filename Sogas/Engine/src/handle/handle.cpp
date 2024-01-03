@@ -20,6 +20,14 @@ void Handle::destroy()
     }
 }
 
+void Handle::render_debug(pinut::resources::CommandBuffer* cmd)
+{
+    if (auto handle_manager = HandleManager::get_by_type(type))
+    {
+        handle_manager->render_debug(*this, cmd);
+    }
+}
+
 void Handle::load(const nlohmann::json& j, EntityParser& context)
 {
     if (auto handle_manager = HandleManager::get_by_type(type))

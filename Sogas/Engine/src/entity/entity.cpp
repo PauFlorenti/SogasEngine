@@ -3,6 +3,7 @@
 #include <entity/entity.h>
 #include <entity/entity_parser.h>
 #include <handle/object_manager.h>
+#include <resources/commandbuffer.h>
 
 namespace sogas
 {
@@ -16,6 +17,18 @@ Entity::~Entity()
         if (components[i].is_valid())
         {
             components[i].destroy();
+        }
+    }
+}
+
+void Entity::render_debug(pinut::resources::CommandBuffer* cmd)
+{
+    for (u32 i = 0; i < HandleManager::get_number_of_defined_types(); i++)
+    {
+        Handle h = components[i];
+        if (h.is_valid())
+        {
+            h.render_debug(cmd);
         }
     }
 }

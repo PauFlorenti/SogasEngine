@@ -30,6 +30,10 @@ class Engine
 
     std::shared_ptr<modules::InputModule>    get_input();
     std::shared_ptr<modules::RendererModule> get_renderer();
+    modules::ModuleManager*                  get_module_manager()
+    {
+        return &module_manager;
+    }
 
     // TODO Same as below. Temporal.
     std::map<std::string, Mesh*>* get_meshes()
@@ -45,9 +49,9 @@ class Engine
     // TODO This is temporal. Camera should be in the scene as an entity.
     modules::ModuleManager       module_manager;
     std::map<std::string, Mesh*> meshes;
-    
-    Clock*                       clock = nullptr;
-    f64                          delta_time{0};
-    f64                          last_time{0};
+
+    Clock* clock = nullptr;
+    f64    delta_time{0};
+    f64    last_time{0};
 };
 } // namespace sogas

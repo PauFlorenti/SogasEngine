@@ -1,5 +1,10 @@
 #pragma once
 
+namespace pinut::resources
+{
+class CommandBuffer;
+}
+
 namespace sogas
 {
 namespace modules
@@ -21,7 +26,7 @@ class ModuleManager
     void update(f32 delta_time);
     void render();
     void render_ui();
-    void render_debug();
+    void render_debug(pinut::resources::CommandBuffer* cmd);
     void resize_window(u32 width, u32 height);
 
     void register_module(std::shared_ptr<IModule> module);

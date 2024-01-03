@@ -11,8 +11,11 @@
 	"update": [
 		"pau",
 		"camera",
-		"flyover_camera",
-		"point_light"
+		"flyover_camera"
 	],
-	"render_debug": []
+	"render_debug": [
+		"transform",
+		"name",
+		"point_light"
+	]
 }

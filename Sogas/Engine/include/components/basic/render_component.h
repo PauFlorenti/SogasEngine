@@ -16,7 +16,6 @@ class RenderComponent : public BaseComponent
     };
 
   public:
-    void render();
     void on_entity_created();
 
     void load(const json& j, EntityParser& context);

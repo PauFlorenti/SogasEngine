@@ -4,6 +4,7 @@
     "input"
   ],
   "render":[
-    "renderer"
+    "renderer",
+    "entity"
   ]
 }

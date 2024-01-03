@@ -13,7 +13,7 @@ struct Light
     vec3  position;
     float intensity;
     vec3  color;
-    float max_distance;
+    float radius;
 };
 
 layout (binding = 1, set = 0) uniform light {
@@ -29,7 +29,7 @@ layout (binding = 2, set = 1) uniform sampler2D normal_texture;
 void main()
 {
     vec3 N      = normalize(inNormal);
-    vec4 color  = vec4(0.f);
+    vec4 light  = vec4(0.f);
     vec4 albedo = vec4(inColor, 1.0f) * texture(albedo_texture, inUv);
     vec3 normal = texture(normal_texture, inUv).xyz;
 
@@ -37,22 +37,24 @@ void main()
 
     for (int light_index = 0; light_index < LIGHT_COUNT; light_index++)
     {
-        Light light = u_light.l[light_index];
-
-        vec3 L = light.position - inPosition;
+        Light l = u_light.l[light_index];
+        
+        vec3 L = l.position - inPosition;
         float distance_to_light = length(L);
+
+        if (distance_to_light > l.radius)
+            continue;
+
         L = normalize(L);
         float dotNL = normalize(dot(N, L));
 
         float attenuation = 0.0f;
-        attenuation += light.max_distance / distance_to_light;
+        attenuation += l.radius / distance_to_light;
 
         if (dotNL > 0.0f) { // Pixel visible by light.
-            color += attenuation * vec4(light.color, 1) * light.intensity * dotNL;
+            light += attenuation * vec4(l.color, 1) * l.intensity * dotNL;
         }
     }
 
-
-    //outFragmentColor = color * albedo;
-    outFragmentColor = color * material_color;
+    outFragmentColor = light * material_color;
 }

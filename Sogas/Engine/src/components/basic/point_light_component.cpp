@@ -1,6 +1,8 @@
 #include "pch.hpp"
 
 #include <components/basic/point_light_component.h>
+#include <components/basic/transform_component.h>
+#include <engine/primitives.h>
 #include <render_device.h>
 #include <resources/json_helper.h>
 
@@ -17,5 +19,13 @@ void PointLightComponent::load(const json& j, EntityParser& /*context*/)
     radius    = j.value("radius", radius);
     enabled   = j.value("enabled", enabled);
     intensity = j.value("intensity", intensity);
+}
+void PointLightComponent::render_debug(pinut::resources::CommandBuffer* cmd)
+{
+    TransformComponent* transform_component = get<TransformComponent>();
+    draw_wired_sphere(cmd,
+                      glm::translate(glm::mat4(1.0f), transform_component->get_position()),
+                      radius,
+                      color);
 }
 } // namespace sogas
