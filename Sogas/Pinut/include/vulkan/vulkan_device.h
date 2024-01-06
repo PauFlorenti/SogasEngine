@@ -83,7 +83,9 @@ class VulkanDevice : public GPUDevice
 
     resources::CommandBuffer* get_command_buffer(bool begin) override;
 
-    void* map_buffer(const resources::BufferHandle buffer_id, const u32 size, const u32 offset = 0) override;
+    void* map_buffer(const resources::BufferHandle buffer_id,
+                     const u32                     size,
+                     const u32                     offset = 0) override;
     void  unmap_buffer(const resources::BufferHandle buffer_id) override;
 
     void copy_buffer(const resources::BufferHandle src_buffer_id,
@@ -107,7 +109,16 @@ class VulkanDevice : public GPUDevice
     void destroy_descriptor_set_immediate(resources::ResourceHandle handle) override;
     void destroy_descriptor_set_layout_immediate(resources::ResourceHandle handle) override;
 
+    void render_menu_debug(resources::CommandBuffer& cmd) override;
+
     void destroy_pending_resources();
+
+    static VkCommandBuffer begin_single_use_command_buffer(const VkDevice&      device,
+                                                           const VkCommandPool& command_pool);
+    static void            end_single_use_command_buffer(const VkDevice&      device,
+                                                         const VkCommandPool& command_pool,
+                                                         const VkQueue&       queue,
+                                                         VkCommandBuffer      cmd);
 
     static std::map<std::string, VulkanShaderState> shaders;
     static std::map<std::string, VulkanPipeline>    pipelines;
@@ -150,9 +161,6 @@ class VulkanDevice : public GPUDevice
     void create_swapchain();
     void destroy_swapchain();
     void recreate_swapchain();
-
-    VkCommandBuffer begin_single_use_command_buffer();
-    void            end_single_use_command_buffer(VkCommandBuffer cmd);
 
     // internals
     void create_vulkan_buffer(const u32             size,

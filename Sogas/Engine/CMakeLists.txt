@@ -10,20 +10,23 @@ endif()
 
 add_library(engine STATIC ${SOURCES})
 
+set(EXTERNAL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../external)
+set(SECOND_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 target_include_directories(engine
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Pinut/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/json/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/stb
+    ${EXTERNAL_DIR}
+    ${EXTERNAL_DIR}/json/include
+    ${SECOND_PARTY_DIR}/Logger/include
+    ${SECOND_PARTY_DIR}/Pinut/include
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Logger/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tinyobj
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external/tinygltf
+    ${EXTERNAL_DIR}/stb
+    ${EXTERNAL_DIR}/tinygltf
+    ${EXTERNAL_DIR}/tinyobj
 )
 
-target_link_libraries(engine PUBLIC logger PRIVATE pinut)
+target_link_libraries(engine PRIVATE logger pinut)
 
 target_precompile_headers(engine PUBLIC src/pch.hpp)

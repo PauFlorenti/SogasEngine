@@ -421,6 +421,8 @@ void RendererModule::render()
     auto module_manager = Engine::Get().get_module_manager();
     module_manager->render_debug(cmd);
 
+    renderer->render_menu_debug(*cmd);
+
     renderer->end_frame(); 
 
     current_image++;

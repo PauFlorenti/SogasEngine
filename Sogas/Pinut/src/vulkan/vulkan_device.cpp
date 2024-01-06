@@ -5,16 +5,18 @@
 #include <vulkan/utils/vulkan_utils.h>
 #include <vulkan/vulkan_debug.h>
 #include <vulkan/vulkan_device.h>
+#include <vulkan/vulkan_imgui.h>
 
 #include <resources/pipeline.h>
 #include <resources/renderpass.h>
 #include <resources/shader_state.h>
 
+// clang-format off
 #ifdef WIN32
 #include <windows.h>
-
-#include <vulkan/vulkan_win32.h>
+#include <vulkan/vulkan_win32.h> // Depends on windows.h being declared first.
 #endif
+// clang-format on
 namespace
 {
 static const std::vector<const char*> validation_layers = {"VK_LAYER_KHRONOS_validation"};
@@ -284,14 +286,14 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
                                     "DepthTexture"});
 
     auto texture = access_texture(depth_texture.id);
-    auto cmd     = begin_single_use_command_buffer();
+    auto cmd     = begin_single_use_command_buffer(device, command_pool);
     transition_image_layout(cmd,
                             texture->image,
                             VK_FORMAT_D32_SFLOAT,
                             VK_IMAGE_LAYOUT_UNDEFINED,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    end_single_use_command_buffer(cmd);
+    end_single_use_command_buffer(device, command_pool, graphics_queue, cmd);
 
     // Move temporal render pass here for the swapchain's framebuffers creation
     VkAttachmentDescription color_attachment = {};
@@ -367,6 +369,18 @@ void VulkanDevice::init(const DeviceDescriptor& descriptor)
 
     VulkanDevice::render_passes.insert({"Swapchain_renderpass", vulkan_renderpass});
 
+    // Init imgui
+    VulkanContext imgui_context;
+    imgui_context.device               = device;
+    imgui_context.instance             = vulkan_instance;
+    imgui_context.gpu                  = physical_device;
+    imgui_context.render_pass          = render_pass;
+    imgui_context.graphics_queue       = graphics_queue;
+    imgui_context.graphics_queue_index = graphics_family;
+    imgui_context.window_handle        = window_handle;
+
+    init_imgui(imgui_context);
+
     VkFramebufferCreateInfo framebuffer_info = vkinit::framebuffer_create_info(render_pass, extent);
 
     const u32 swapchain_images_size = static_cast<u32>(swapchain_images.size());
@@ -431,6 +445,8 @@ void VulkanDevice::shutdown()
     textures.shutdown();
     descriptor_sets.shutdown();
     descriptor_set_layouts.shutdown();
+
+    shutdown_imgui();
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
@@ -998,7 +1014,7 @@ void VulkanDevice::create_pipeline(const resources::PipelineDescriptor& descript
 
 void VulkanDevice::end_frame()
 {
-    // Acquire swapchain image.
+        // Acquire swapchain image.
     auto ok = vkAcquireNextImageKHR(device,
                                     swapchain.swapchain,
                                     UINT64_MAX,
@@ -1072,7 +1088,9 @@ resources::CommandBuffer* VulkanDevice::get_command_buffer(bool begin)
     return &command_buffers[current_frame];
 }
 
-void* VulkanDevice::map_buffer(const resources::BufferHandle handle, const u32 size, const u32 offset)
+void* VulkanDevice::map_buffer(const resources::BufferHandle handle,
+                               const u32                     size,
+                               const u32                     offset)
 {
     ASSERT(handle.id != INVALID_ID);
     ASSERT(size > 0);
@@ -1166,7 +1184,7 @@ void VulkanDevice::copy_buffer_to_image(const resources::BufferHandle  buffer_ha
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {width, height, 1};
 
-    auto cmd = begin_single_use_command_buffer();
+    auto cmd = begin_single_use_command_buffer(device, command_pool);
 
     transition_image_layout(cmd,
                             texture->image,
@@ -1187,7 +1205,7 @@ void VulkanDevice::copy_buffer_to_image(const resources::BufferHandle  buffer_ha
                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    end_single_use_command_buffer(cmd);
+    end_single_use_command_buffer(device, command_pool, graphics_queue, cmd);
 }
 
 void VulkanDevice::destroy_buffer(resources::BufferHandle handle)
@@ -1248,6 +1266,13 @@ void VulkanDevice::destroy_descriptor_set_layout_immediate(resources::ResourceHa
     vkDestroyDescriptorSetLayout(device, layout->layout, nullptr);
 
     descriptor_set_layouts.remove_resource(handle);
+}
+
+void VulkanDevice::render_menu_debug(resources::CommandBuffer& cmd)
+{
+    VulkanCommandBuffer* vulkan_cmd = static_cast<VulkanCommandBuffer*>(&cmd);
+
+    render_imgui(vulkan_cmd->cmd);
 }
 
 void VulkanDevice::destroy_pending_resources()
@@ -1664,7 +1689,8 @@ void VulkanDevice::recreate_swapchain()
     }
 }
 
-VkCommandBuffer VulkanDevice::begin_single_use_command_buffer()
+VkCommandBuffer VulkanDevice::begin_single_use_command_buffer(const VkDevice&      device,
+                                                              const VkCommandPool& command_pool)
 {
     VkCommandBuffer             command_buffer    = VK_NULL_HANDLE;
     VkCommandBufferAllocateInfo cmd_allocate_info = {
@@ -1683,16 +1709,19 @@ VkCommandBuffer VulkanDevice::begin_single_use_command_buffer()
     return command_buffer;
 }
 
-void VulkanDevice::end_single_use_command_buffer(VkCommandBuffer cmd)
+void VulkanDevice::end_single_use_command_buffer(const VkDevice&      device,
+                                                 const VkCommandPool& command_pool,
+                                                 const VkQueue&       queue,
+                                                 VkCommandBuffer      cmd)
 {
     vkEndCommandBuffer(cmd);
 
     VkSubmitInfo submit_info       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers    = &cmd;
-    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
 
-    vkQueueWaitIdle(graphics_queue);
+    vkQueueWaitIdle(queue);
     vkFreeCommandBuffers(device, command_pool, 1, &cmd);
 }
 
