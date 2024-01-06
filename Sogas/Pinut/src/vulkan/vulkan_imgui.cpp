@@ -28,6 +28,7 @@ void init_imgui(const VulkanContext& context)
     pool_info.poolSizeCount              = 1;
     pool_info.pPoolSizes                 = &descriptor_pool_size;
     pool_info.maxSets                    = 1;
+    pool_info.flags                      = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     VK_CHECK(vkCreateDescriptorPool(state->device, &pool_info, nullptr, &state->descriptor_pool));
 
@@ -68,10 +69,10 @@ void render_imgui(const VkCommandBuffer& cmd)
 
 void shutdown_imgui()
 {
-    vkDestroyDescriptorPool(state->device, state->descriptor_pool, nullptr);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+    vkDestroyDescriptorPool(state->device, state->descriptor_pool, nullptr);
     delete state;
 }
 } // namespace pinut::vulkan
