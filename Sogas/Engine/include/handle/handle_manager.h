@@ -64,6 +64,7 @@ class HandleManager
     Handle create_handle();
     void   destroy_handle(Handle h);
     void   render_debug(Handle h, pinut::resources::CommandBuffer* cmd);
+    void   render_debug_menu(Handle h);
     void   load(Handle h, const json& j, EntityParser& context);
     void   on_entity_created(Handle h);
 
@@ -104,6 +105,7 @@ class HandleManager
     virtual void destroy_object(Handle::handle_index index)                                   = 0;
     virtual void render_debug_object(Handle::handle_index             index,
                                      pinut::resources::CommandBuffer* cmd)                    = 0;
+    virtual void render_debug_object_menu(Handle::handle_index index)                         = 0;
     virtual void load_object(u32 source_internal_index, const json& j, EntityParser& context) = 0;
     virtual void on_entity_created_object(u32 internal_index)                                 = 0;
 

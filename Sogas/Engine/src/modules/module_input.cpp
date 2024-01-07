@@ -62,5 +62,10 @@ void InputModule::update(f32 delta_time)
 void InputModule::render()
 {
 }
+
+void InputModule::render_debug_menu()
+{
+    // TODO implement input render debug menu.
+}
 } // namespace modules
 } // namespace sogas

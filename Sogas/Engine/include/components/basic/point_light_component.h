@@ -16,6 +16,7 @@ class PointLightComponent : public BaseComponent
   public:
     void load(const json& j, EntityParser& context);
     void render_debug(pinut::resources::CommandBuffer* cmd);
+    void render_debug_menu();
 
     glm::vec4 color     = glm::vec4(1.0f);
     f32       intensity = 1.0f;

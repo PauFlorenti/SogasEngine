@@ -6,6 +6,16 @@
 
 namespace sogas
 {
+const std::string Handle::get_type_name() const
+{
+    if (auto handle_manager = HandleManager::get_by_type(type))
+    {
+        return handle_manager->get_name();
+    }
+
+    return "<invalid>";
+}
+
 bool Handle::is_valid() const
 {
     auto handle_manager = HandleManager::get_by_type(type);
@@ -25,6 +35,14 @@ void Handle::render_debug(pinut::resources::CommandBuffer* cmd)
     if (auto handle_manager = HandleManager::get_by_type(type))
     {
         handle_manager->render_debug(*this, cmd);
+    }
+}
+
+void Handle::render_debug_menu()
+{
+    if (auto handle_manager = HandleManager::get_by_type(type))
+    {
+        handle_manager->render_debug_menu(*this);
     }
 }
 

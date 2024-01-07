@@ -27,6 +27,7 @@ class ModuleManager
     void render();
     void render_ui();
     void render_debug(pinut::resources::CommandBuffer* cmd);
+    void render_debug_menu(const pinut::resources::CommandBuffer& cmd);
     void resize_window(u32 width, u32 height);
 
     void register_module(std::shared_ptr<IModule> module);

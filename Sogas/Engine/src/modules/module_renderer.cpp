@@ -5,6 +5,7 @@
 #include <components/basic/transform_component.h>
 #include <engine/engine.h>
 #include <engine/primitives.h>
+#include <imgui/imgui.h>
 #include <modules/module_renderer.h>
 #include <modules/render_manager.h>
 #include <resources/pipeline.h>
@@ -420,12 +421,17 @@ void RendererModule::render()
 
     auto module_manager = Engine::Get().get_module_manager();
     module_manager->render_debug(cmd);
+    module_manager->render_debug_menu(*cmd);
 
-    renderer->render_menu_debug(*cmd);
-
-    renderer->end_frame(); 
+    renderer->end_frame();
 
     current_image++;
+}
+
+void RendererModule::render_debug_menu()
+{
+    auto io = ImGui::GetIO();
+    ImGui::Text("Time: %lf (Delta:%f FPS:%f)", 0.0f, io.DeltaTime, io.Framerate);
 }
 
 void RendererModule::resize_window(u32 width, u32 height)

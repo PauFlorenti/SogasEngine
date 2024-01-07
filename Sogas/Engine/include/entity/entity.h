@@ -7,7 +7,7 @@
 
 namespace pinut::resources
 {
-  class CommandBuffer;
+class CommandBuffer;
 }
 namespace sogas
 {
@@ -32,6 +32,7 @@ class Entity : public BaseComponent
     }
 
     void render_debug(pinut::resources::CommandBuffer* cmd);
+    void render_debug_menu();
 
     void add_component(Handle::handle_type type, Handle component);
     void add_component(Handle component);

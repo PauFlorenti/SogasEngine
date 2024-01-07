@@ -12,6 +12,7 @@ class NameComponent : public BaseComponent
     const std::string get_name() const;
     void              set_name(const std::string& name);
     void              load(const json& j, EntityParser& context);
+    void              render_debug_menu();
 
   private:
     static constexpr size_t max_length = 128;

@@ -3,6 +3,7 @@
 #include <components/basic/transform_component.h>
 #include <handle/handle_manager.h>
 #include <handle/object_manager.h>
+#include <imgui/imgui.h>
 #include <resources/json_helper.h>
 
 namespace sogas
@@ -45,5 +46,17 @@ void TransformComponent::load(const json& j, EntityParser& /*context*/)
             scale = load_vec3(j, "scale");
         }
     }
+}
+void TransformComponent::render_debug_menu()
+{
+    ImGui::DragFloat3("Position", &position[0]);
+    ImGui::DragFloat3("Scale", &scale[0]);
+
+    const auto fwd   = get_forward();
+    const auto right = get_right();
+    const auto up    = get_up();
+    ImGui::Text("Forward %f %f %f", fwd.x, fwd.y, fwd.z);
+    ImGui::Text("Right %f %f %f", right.x, right.y, right.z);
+    ImGui::Text("Up %f %f %f", up.x, up.y, up.z);
 }
 } // namespace sogas

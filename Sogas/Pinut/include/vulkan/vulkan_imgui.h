@@ -25,7 +25,8 @@ struct ImguiState
 };
 
 void init_imgui(const VulkanContext& context);
-void render_imgui(const VkCommandBuffer& cmd);
+void start_imgui_frame();
+void end_imgui_frame(const resources::CommandBuffer& cmd);
 void shutdown_imgui();
 } // namespace vulkan
 } // namespace pinut

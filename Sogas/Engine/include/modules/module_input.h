@@ -34,6 +34,7 @@ class InputModule final : public IModule
     void render() override;
     void render_ui() override{};
     void render_debug(pinut::resources::CommandBuffer*) override{};
+    void render_debug_menu() override;
     void resize_window(u32, u32) override{};
 
   private:

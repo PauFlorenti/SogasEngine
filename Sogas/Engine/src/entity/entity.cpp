@@ -1,8 +1,10 @@
 #include "pch.hpp"
 
+#include <components/basic/name_component.h>
 #include <entity/entity.h>
 #include <entity/entity_parser.h>
 #include <handle/object_manager.h>
+#include <imgui/imgui.h>
 #include <resources/commandbuffer.h>
 
 namespace sogas
@@ -33,6 +35,28 @@ void Entity::render_debug(pinut::resources::CommandBuffer* cmd)
     }
 }
 
+void Entity::render_debug_menu()
+{
+    ImGui::PushID(this);
+    if (ImGui::TreeNode(get_name().c_str()))
+    {
+        for (i32 i = 0; i < Handle::max_types; ++i)
+        {
+            Handle h = components[i];
+            if (h.is_valid())
+            {
+                if (ImGui::TreeNode(h.get_type_name().c_str()))
+                {
+                    h.render_debug_menu();
+                    ImGui::TreePop();
+                }
+            }
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
+}
+
 void Entity::add_component(Handle::handle_type type, Handle component)
 {
     ASSERT(type < Handle::max_types);
@@ -49,7 +73,11 @@ void Entity::add_component(Handle component)
 
 const std::string Entity::get_name() const
 {
-    // TODO Implement name component.
+    if (NameComponent* name_component = get<NameComponent>())
+    {
+        return name_component->get_name();
+    }
+
     return {};
 }
 

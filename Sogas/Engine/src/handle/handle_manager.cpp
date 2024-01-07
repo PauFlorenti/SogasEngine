@@ -118,6 +118,16 @@ void HandleManager::render_debug(Handle h, pinut::resources::CommandBuffer* cmd)
     render_debug_object(external_to_internal[h.get_external_index()].internal_index, cmd);
 }
 
+void HandleManager::render_debug_menu(Handle h)
+{
+    if (!h.is_valid())
+    {
+        return;
+    }
+
+    render_debug_object_menu(external_to_internal[h.get_external_index()].internal_index);
+}
+
 void HandleManager::load(Handle h, const json& j, EntityParser& context)
 {
     if (!h.is_valid())

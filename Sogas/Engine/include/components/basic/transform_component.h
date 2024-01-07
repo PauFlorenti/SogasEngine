@@ -12,5 +12,6 @@ class TransformComponent : public Transform, public BaseComponent
     void update(f32 /*delta_time*/){};
     void on_entity_created(){};
     void load(const nlohmann::json& j, EntityParser& context);
+    void render_debug_menu();
 };
 } // namespace sogas

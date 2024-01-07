@@ -29,6 +29,7 @@ class IModule
     virtual void render()                                           = 0;
     virtual void render_ui()                                        = 0;
     virtual void render_debug(pinut::resources::CommandBuffer* cmd) = 0;
+    virtual void render_debug_menu()                                = 0;
     virtual void resize_window(u32 width, u32 height)               = 0;
 
   private:

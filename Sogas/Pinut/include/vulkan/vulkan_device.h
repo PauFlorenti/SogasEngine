@@ -109,8 +109,6 @@ class VulkanDevice : public GPUDevice
     void destroy_descriptor_set_immediate(resources::ResourceHandle handle) override;
     void destroy_descriptor_set_layout_immediate(resources::ResourceHandle handle) override;
 
-    void render_menu_debug(resources::CommandBuffer& cmd) override;
-
     void destroy_pending_resources();
 
     static VkCommandBuffer begin_single_use_command_buffer(const VkDevice&      device,

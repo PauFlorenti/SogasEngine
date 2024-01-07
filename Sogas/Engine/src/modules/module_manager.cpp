@@ -1,10 +1,12 @@
 
 #include "pch.hpp"
 
+#include <imgui/imgui.h>
 #include <modules/module.h>
 #include <modules/module_manager.h>
 #include <platform/platform.h>
 #include <resources/commandbuffer.h>
+#include <vulkan/vulkan_imgui.h>
 
 namespace sogas
 {
@@ -60,6 +62,20 @@ void ModuleManager::render_debug(pinut::resources::CommandBuffer* cmd)
     {
         module.second->render_debug(cmd);
     }
+}
+
+void ModuleManager::render_debug_menu(const pinut::resources::CommandBuffer& cmd)
+{
+    pinut::vulkan::start_imgui_frame();
+
+    ImGui::ShowDemoWindow(nullptr);
+
+    for (const auto& module : registered_modules)
+    {
+        module.second->render_debug_menu();
+    }
+
+    pinut::vulkan::end_imgui_frame(cmd);
 }
 
 void ModuleManager::resize_window(u32 width, u32 height)

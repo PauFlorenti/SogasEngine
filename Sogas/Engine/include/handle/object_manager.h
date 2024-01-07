@@ -85,6 +85,16 @@ class ObjectManager : public HandleManager
         return objects + external_data.internal_index;
     }
 
+    template <typename FuncType>
+    void for_each(FuncType fn)
+    {
+        ASSERT(objects);
+        for (u32 i = 0; i < number_objects_used; ++i)
+        {
+            fn(objects + i);
+        }
+    }
+
   private:
     void create_object(Handle::handle_index internal_index) override
     {
@@ -103,6 +113,12 @@ class ObjectManager : public HandleManager
     {
         object_type* address = objects + internal_index;
         address->render_debug(cmd);
+    }
+
+    void render_debug_object_menu(Handle::handle_index internal_index) override
+    {
+        object_type* address = objects + internal_index;
+        address->render_debug_menu();
     }
 
     void load_object(u32 internal_index, const json& j, EntityParser& context) override

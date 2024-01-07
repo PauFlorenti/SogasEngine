@@ -1,6 +1,8 @@
 #include "pch.hpp"
 
+#include <entity/entity.h>
 #include <handle/handle_manager.h>
+#include <imgui/imgui.h>
 #include <modules/module_entities.h>
 
 namespace
@@ -92,6 +94,29 @@ void EntityModule::render_debug(pinut::resources::CommandBuffer* cmd)
     for (auto object_manager : managers_to_render_debug)
     {
         object_manager->render_debug_all(cmd);
+    }
+}
+
+void EntityModule::render_debug_menu()
+{
+    if (ImGui::TreeNode("All Entities ..."))
+    {
+        auto object_manager = get_object_manager<Entity>();
+        object_manager->for_each(
+          [](Entity* e)
+          {
+              Handle h(e);
+              if (h.get_owner().is_valid())
+              {
+                  return;
+              }
+
+              ImGui::PushID(e);
+              e->render_debug_menu();
+              ImGui::PopID();
+          });
+
+        ImGui::TreePop();
     }
 }
 } // namespace modules

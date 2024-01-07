@@ -55,17 +55,20 @@ void init_imgui(const VulkanContext& context)
     ImGui_ImplVulkan_CreateFontsTexture();
 }
 
-void render_imgui(const VkCommandBuffer& cmd)
+void start_imgui_frame()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+}
 
-    bool window_open = true;
-    ImGui::ShowDemoWindow(&window_open);
+void end_imgui_frame(const resources::CommandBuffer& cmd)
+{
+    // This is a marranada.
+    VulkanCommandBuffer* vulkan_cmd = static_cast<VulkanCommandBuffer*>(std::remove_const_t<resources::CommandBuffer*>(&cmd));
 
     ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vulkan_cmd->cmd);
 }
 
 void shutdown_imgui()

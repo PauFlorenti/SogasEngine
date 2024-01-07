@@ -3,6 +3,7 @@
 
 #include <components/basic/name_component.h>
 #include <handle/object_manager.h>
+#include <imgui/imgui.h>
 
 namespace sogas
 {
@@ -32,6 +33,11 @@ void NameComponent::load(const json& j, EntityParser& /*context*/)
 {
     ASSERT(j.is_string());
     set_name(j.get<std::string>().c_str());
+}
+
+void NameComponent::render_debug_menu()
+{
+    ImGui::Text(name);
 }
 
 Handle get_entity_by_name(const std::string& name)

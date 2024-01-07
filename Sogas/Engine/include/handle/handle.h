@@ -2,7 +2,7 @@
 
 namespace pinut::resources
 {
-  class CommandBuffer;
+class CommandBuffer;
 }
 namespace sogas
 {
@@ -49,6 +49,8 @@ class Handle final
     {
         return type;
     }
+
+    const std::string get_type_name() const;
 
     handle_generation get_generation() const
     {
@@ -111,6 +113,7 @@ class Handle final
     void destroy();
 
     void render_debug(pinut::resources::CommandBuffer* cmd);
+    void render_debug_menu();
     void load(const nlohmann::json& json_data, EntityParser& scene);
     void on_entity_created();
 

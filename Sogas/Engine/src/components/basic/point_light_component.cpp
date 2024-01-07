@@ -3,6 +3,7 @@
 #include <components/basic/point_light_component.h>
 #include <components/basic/transform_component.h>
 #include <engine/primitives.h>
+#include <imgui/imgui.h>
 #include <render_device.h>
 #include <resources/json_helper.h>
 
@@ -27,5 +28,13 @@ void PointLightComponent::render_debug(pinut::resources::CommandBuffer* cmd)
                       glm::translate(glm::mat4(1.0f), transform_component->get_position()),
                       radius,
                       color);
+}
+
+void PointLightComponent::render_debug_menu()
+{
+    ImGui::ColorEdit4("Light color", &color[0]);
+    ImGui::DragFloat("Radius", &radius, 0.01f, 0.0f, 100.0f);
+    ImGui::DragFloat("Intensity", &intensity, 0.1f, 0.0f, 100.0f);
+    ImGui::Checkbox("Enabled", &enabled);
 }
 } // namespace sogas

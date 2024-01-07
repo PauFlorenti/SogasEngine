@@ -1268,13 +1268,6 @@ void VulkanDevice::destroy_descriptor_set_layout_immediate(resources::ResourceHa
     descriptor_set_layouts.remove_resource(handle);
 }
 
-void VulkanDevice::render_menu_debug(resources::CommandBuffer& cmd)
-{
-    VulkanCommandBuffer* vulkan_cmd = static_cast<VulkanCommandBuffer*>(&cmd);
-
-    render_imgui(vulkan_cmd->cmd);
-}
-
 void VulkanDevice::destroy_pending_resources()
 {
     if (deletion_queue.empty())
