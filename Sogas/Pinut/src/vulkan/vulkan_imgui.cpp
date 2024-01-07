@@ -46,8 +46,8 @@ void init_imgui(const VulkanContext& context)
     io.DisplaySize             = ImVec2(1280.0f, 720.0f);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
-    ImGui_ImplWin32_Init(context.window_handle);
-    if (!ImGui_ImplVulkan_Init(&imgui_vulkan_info, context.render_pass))
+    if (!ImGui_ImplVulkan_Init(&imgui_vulkan_info, context.render_pass) ||
+        !ImGui_ImplWin32_Init(context.window_handle))
     {
         PFATAL("Failed to initialize imgui for vulkan backend.");
     }
@@ -60,11 +60,12 @@ void render_imgui(const VkCommandBuffer& cmd)
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+
     bool window_open = true;
     ImGui::ShowDemoWindow(&window_open);
+
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-    ImGui::EndFrame();
 }
 
 void shutdown_imgui()

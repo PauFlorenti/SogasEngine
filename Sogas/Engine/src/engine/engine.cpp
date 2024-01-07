@@ -11,6 +11,8 @@
 #include <platform/platform.h>
 #include <resources/mesh.h>
 
+LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace
 {
 using namespace sogas::platform;
@@ -18,6 +20,13 @@ Window_id window;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+#if _DEBUG
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+    {
+        return true;
+    }
+#endif
+
     PAINTSTRUCT ps;
     HDC         hdc;
 

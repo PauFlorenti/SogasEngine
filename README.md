@@ -19,8 +19,14 @@ this main one.
 - [ ] All window info is stored in a fixed array. At the moment no more than 4 windows are allowed.
 
 ## PINUT
+- [x] Wired pipeline.
 - [ ] Easily bind multiple descriptor sets.
 - [ ] Draw multiple entities.
+- [ ] Frustrum culling.
+- [ ] Shadows from spot lights.
+- [ ] Multiple passes.
+- [ ] Pipeline read and created from json file specs.
+- [ ] Render graph.
 
 ## ENGINE
 - [x] Load .obj files.
@@ -30,5 +36,18 @@ this main one.
 - [ ] Create render component.
     - [x] Create mesh data.
     - [ ] Create material data.
-- [ ] Create light component.
-- [ ] Parse json scene file.
+- [ ] Create point light component.
+- [ ] Create spot light component.
+- [ ] Add directional light to the scene.
+- [x] Parse json scene file.
+- [x] Add imgui.
+- [ ] ImGui rendered only on debug mode.
+- [ ] Add bounding sphere to entities.
+- [ ] Add bounding boxes to entities.
+- [ ] Create and allocator for the engine. Use that.
+    - [ ] Maybe use allocator and get rid of smart pointers?
+- [ ] Resource module.
+- [ ] Animations
+
+## CODEGEN
+- [ ] ImGui should only be built and linked in debug mode.
